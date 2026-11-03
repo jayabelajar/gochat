@@ -1,0 +1,43 @@
+@import "tailwindcss";
+
+:root {
+  --background: #111214;
+  --foreground: #f2f3f5;
+  --sidebar: #17181b;
+  --secondary: #1a1b1e;
+  --accent: #5865f2;
+  --accent-hover: #4752c4;
+  --text-muted: #949ba4;
+  --success: #23a55a;
+  --danger: #f23f43;
+  --border: #232428;
+}
+
+body {
+  background-color: var(--background);
+  color: var(--foreground);
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+  overflow: hidden;
+  height: 100vh;
+  width: 100vw;
+  user-select: none;
+}
+
+/* Custom Scrollbar for Discord-like feel */
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+::-webkit-scrollbar-thumb {
+  background: #202225;
+  border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: #2b2d31;
+}
