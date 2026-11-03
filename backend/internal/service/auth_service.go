@@ -118,6 +118,23 @@ func (s *AuthService) Refresh(ctx context.Context, refreshToken string) (*AuthTo
 	return s.createSession(ctx, user, session.UserAgent, session.ClientIP)
 }
 
+func (s *AuthService) ResetPassword(ctx context.Context, email, newPassword string) error {
+	user, err := s.userRepo.GetByEmail(ctx, email)
+	if err != nil {
+		return errors.New("user with this email does not exist")
+	}
+
+	hashedPassword, err := bcrypt.GenerateFromPassword([]byte(newPassword), bcrypt.DefaultCost)
+	if err != nil {
+		return fmt.Errorf("failed to hash password: %w", err)
+	}
+
+	user.PasswordHash = string(hashedPassword)
+	query := `UPDATE users SET password_hash = $1, updated_at = NOW() WHERE id = $2`
+	_, err = s.userRepo.GetPool().Exec(ctx, query, user.PasswordHash, user.ID)
+	return err
+}
+
 func (s *AuthService) Logout(ctx context.Context, refreshToken string) error {
 	return s.userRepo.RevokeSession(ctx, refreshToken)
 }

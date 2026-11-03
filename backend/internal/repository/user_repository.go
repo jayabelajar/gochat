@@ -24,6 +24,10 @@ func NewUserRepository(pool *pgxpool.Pool) *UserRepository {
 	return &UserRepository{pool: pool}
 }
 
+func (r *UserRepository) GetPool() *pgxpool.Pool {
+	return r.pool
+}
+
 func (r *UserRepository) Create(ctx context.Context, user *models.User) error {
 	query := `
 		INSERT INTO users (id, email, username, display_name, password_hash, avatar_url, bio, status, created_at, updated_at)

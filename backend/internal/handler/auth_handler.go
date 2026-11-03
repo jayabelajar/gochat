@@ -85,6 +85,24 @@ func (h *AuthHandler) Refresh(c *gin.Context) {
 	response.OK(c, "Token refreshed", tokens)
 }
 
+func (h *AuthHandler) ResetPassword(c *gin.Context) {
+	var req struct {
+		Email       string `json:"email" binding:"required,email"`
+		NewPassword string `json:"new_password" binding:"required,min=6"`
+	}
+	if err := c.ShouldBindJSON(&req); err != nil {
+		response.BadRequest(c, "Invalid request payload", err)
+		return
+	}
+
+	if err := h.authService.ResetPassword(c.Request.Context(), req.Email, req.NewPassword); err != nil {
+		response.BadRequest(c, err.Error(), err)
+		return
+	}
+
+	response.OK(c, "Password reset successfully", nil)
+}
+
 func (h *AuthHandler) Logout(c *gin.Context) {
 	var req struct {
 		RefreshToken string `json:"refresh_token" binding:"required"`

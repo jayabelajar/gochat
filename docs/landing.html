@@ -1,0 +1,1559 @@
+<!DOCTYPE html>
+<html lang="id" class="dark scroll-smooth">
+
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>GoChat — Real-Time Engineering & Community Communication Platform</title>
+    <!-- Google Fonts: Inter & JetBrains Mono -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link
+        href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap"
+        rel="stylesheet">
+    <!-- Tailwind CSS CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Lucide Icons CDN -->
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <script>
+        tailwind.config = {
+            darkMode: 'class',
+            theme: {
+                extend: {
+                    fontFamily: {
+                        sans: ['Inter', '-apple-system', 'BlinkMacSystemFont', 'sans-serif'],
+                        mono: ['JetBrains Mono', 'monospace'],
+                    },
+                    colors: {
+                        bg: '#111214',
+                        sidebar: '#17181B',
+                        chat: '#222327',
+                        surface: '#2B2D31',
+                        surfaceHover: '#32353B',
+                        accent: '#5865F2',
+                        accentHover: '#4752C4',
+                        textMain: '#F2F3F5',
+                        textMuted: '#949BA4',
+                        borderSubtle: '#26282D',
+                        online: '#23A55A',
+                        idle: '#F0B232',
+                        dnd: '#F23F43',
+                        offline: '#80848E'
+                    }
+                }
+            }
+        }
+    </script>
+    <style>
+        * {
+            box-sizing: border-box;
+            -webkit-tap-highlight-color: transparent;
+        }
+
+        html,
+        body {
+            background-color: #111214;
+            color: #F2F3F5;
+            font-family: 'Inter', sans-serif;
+            -webkit-font-smoothing: antialiased;
+            overflow-x: hidden;
+        }
+
+        /* Subtle Grid Background */
+        .bg-grid-pattern {
+            background-size: 32px 32px;
+            background-image:
+                linear-gradient(to right, rgba(38, 40, 45, 0.35) 1px, transparent 1px),
+                linear-gradient(to bottom, rgba(38, 40, 45, 0.35) 1px, transparent 1px);
+        }
+
+        /* Custom Scrollbar */
+        ::-webkit-scrollbar {
+            width: 6px;
+            height: 6px;
+        }
+
+        ::-webkit-scrollbar-track {
+            background: #111214;
+        }
+
+        ::-webkit-scrollbar-thumb {
+            background: #2B2D31;
+            border-radius: 9999px;
+        }
+
+        ::-webkit-scrollbar-thumb:hover {
+            background: #3F4248;
+        }
+
+        pre code {
+            font-family: 'JetBrains Mono', monospace;
+        }
+    </style>
+</head>
+
+<body class="bg-bg text-textMain selection:bg-accent selection:text-white">
+
+    <!-- TOP ANNOUNCEMENT BAR -->
+    <div class="bg-sidebar border-b border-borderSubtle py-2 px-4 text-center text-xs text-textMuted">
+        <div class="max-w-7xl mx-auto flex items-center justify-center gap-2 flex-wrap">
+            <span
+                class="px-1.5 py-0.5 rounded font-mono text-[10px] font-semibold bg-accent/15 text-accent border border-accent/25">RILIS
+                v2.14</span>
+            <span>Engine WebSocket berbasis Go 1.24 kini menurunkan latensi pesan P99 hingga <strong
+                    class="text-textMain font-mono">14ms</strong>.</span>
+            <a href="#architecture"
+                class="text-textMain hover:text-accent underline underline-offset-4 font-medium inline-flex items-center gap-1 transition-colors">
+                <span>Baca benchmark</span>
+                <i data-lucide="arrow-right" class="w-3 h-3"></i>
+            </a>
+        </div>
+    </div>
+
+    <!-- STICKY NAVBAR -->
+    <header class="sticky top-0 z-40 h-16 bg-bg/90 backdrop-blur-md border-b border-borderSubtle">
+        <div class="max-w-7xl mx-auto h-full px-4 sm:px-6 lg:px-8 flex items-center justify-between">
+            <!-- Brand -->
+            <a href="#" class="flex items-center gap-2.5 group">
+                <div
+                    class="w-9 h-9 rounded-xl bg-surface border border-borderSubtle group-hover:border-accent/60 flex items-center justify-center transition-colors">
+                    <i data-lucide="terminal" class="w-4 h-4 text-accent"></i>
+                </div>
+                <div class="flex items-center gap-2">
+                    <span class="font-bold text-base tracking-tight text-textMain">GoChat</span>
+                    <span
+                        class="hidden sm:inline-block px-1.5 py-0.5 text-[10px] font-mono text-textMuted bg-sidebar border border-borderSubtle rounded">v2.14</span>
+                </div>
+            </a>
+
+            <!-- Desktop Nav Links -->
+            <nav class="hidden md:flex items-center gap-7 text-sm text-textMuted">
+                <a href="#preview" class="hover:text-textMain transition-colors">Preview Produk</a>
+                <a href="#features" class="hover:text-textMain transition-colors">Fitur Engineering</a>
+                <a href="#architecture" class="hover:text-textMain transition-colors">Arsitektur</a>
+                <a href="#pricing" class="hover:text-textMain transition-colors">Harga</a>
+                <a href="#faq" class="hover:text-textMain transition-colors">FAQ</a>
+            </nav>
+
+            <!-- Desktop CTA -->
+            <div class="hidden md:flex items-center gap-3">
+                <button onclick="openCommandModal()"
+                    class="h-9 px-3 rounded-lg bg-sidebar hover:bg-surface border border-borderSubtle text-xs text-textMuted hover:text-textMain flex items-center gap-2 transition-colors"
+                    title="Quick Command">
+                    <i data-lucide="search" class="w-3.5 h-3.5"></i>
+                    <span>Cari dok...</span>
+                    <kbd
+                        class="px-1.5 py-0.5 text-[10px] font-mono bg-bg border border-borderSubtle rounded text-textMuted">⌘K</kbd>
+                </button>
+                <button onclick="openAuthModal('login')"
+                    class="h-9 px-3.5 rounded-lg text-xs font-medium text-textMuted hover:text-textMain transition-colors">
+                    Masuk
+                </button>
+                <button onclick="openAuthModal('register')"
+                    class="h-9 px-4 rounded-lg bg-accent hover:bg-accentHover text-xs font-medium text-white transition-colors flex items-center gap-1.5">
+                    <span>Buka Web App</span>
+                    <i data-lucide="arrow-up-right" class="w-3.5 h-3.5"></i>
+                </button>
+            </div>
+
+            <!-- Mobile Menu Button -->
+            <button onclick="toggleMobileMenu()"
+                class="md:hidden p-2 rounded-lg bg-sidebar border border-borderSubtle text-textMuted hover:text-textMain"
+                aria-label="Toggle Menu">
+                <i id="mobileMenuIcon" data-lucide="menu" class="w-5 h-5"></i>
+            </button>
+        </div>
+
+        <!-- Mobile Navigation Drawer -->
+        <div id="mobileNavDrawer"
+            class="hidden md:hidden bg-sidebar border-b border-borderSubtle px-4 pt-3 pb-5 space-y-3">
+            <div class="flex flex-col space-y-2 text-sm text-textMuted">
+                <a href="#preview" onclick="toggleMobileMenu()" class="py-1.5 hover:text-textMain">Preview Produk</a>
+                <a href="#features" onclick="toggleMobileMenu()" class="py-1.5 hover:text-textMain">Fitur
+                    Engineering</a>
+                <a href="#architecture" onclick="toggleMobileMenu()" class="py-1.5 hover:text-textMain">Arsitektur</a>
+                <a href="#pricing" onclick="toggleMobileMenu()" class="py-1.5 hover:text-textMain">Harga</a>
+                <a href="#faq" onclick="toggleMobileMenu()" class="py-1.5 hover:text-textMain">FAQ</a>
+            </div>
+            <div class="pt-2 border-t border-borderSubtle flex flex-col gap-2">
+                <button onclick="openAuthModal('login')"
+                    class="w-full h-9 rounded-lg bg-surface text-xs font-medium text-textMain border border-borderSubtle">
+                    Masuk ke Akun
+                </button>
+                <button onclick="openAuthModal('register')"
+                    class="w-full h-9 rounded-lg bg-accent hover:bg-accentHover text-xs font-medium text-white">
+                    Buat Komunitas Gratis
+                </button>
+            </div>
+        </div>
+    </header>
+
+    <!-- HERO SECTION -->
+    <section class="relative pt-14 pb-20 sm:pt-20 sm:pb-28 bg-grid-pattern border-b border-borderSubtle">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+
+            <!-- Hero Text Copy -->
+            <div class="max-w-3xl mx-auto text-center">
+                <div
+                    class="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-sidebar border border-borderSubtle text-xs text-textMuted mb-6">
+                    <span class="w-2 h-2 rounded-full bg-online"></span>
+                    <span>Dirancang untuk komunitas developer & tim engineering modern</span>
+                </div>
+
+                <h1 class="text-3xl sm:text-5xl lg:text-[54px] font-bold tracking-tight text-textMain leading-[1.12]">
+                    Komunikasi real-time untuk tim engineering tanpa kompromi.
+                </h1>
+
+                <p class="mt-5 text-base sm:text-lg text-textMuted leading-relaxed max-w-2xl mx-auto">
+                    GoChat menggabungkan kecepatan arsitektur channel ala Discord dengan ketajaman antarmuka Linear.
+                    Diskusi kode, voice standup latensi rendah, dan sinkronisasi pesan instan dalam satu workspace.
+                </p>
+
+                <!-- Hero CTAs -->
+                <div class="mt-8 flex flex-col sm:flex-row items-center justify-center gap-3">
+                    <button onclick="openAuthModal('register')"
+                        class="w-full sm:w-auto h-11 px-6 rounded-lg bg-accent hover:bg-accentHover text-sm font-medium text-white transition-colors flex items-center justify-center gap-2">
+                        <i data-lucide="terminal" class="w-4 h-4"></i>
+                        <span>Mulai Gunakan GoChat — Gratis</span>
+                    </button>
+                    <a href="#preview"
+                        class="w-full sm:w-auto h-11 px-6 rounded-lg bg-sidebar hover:bg-surface border border-borderSubtle text-sm font-medium text-textMain transition-colors flex items-center justify-center gap-2">
+                        <i data-lucide="play" class="w-4 h-4 text-accent"></i>
+                        <span>Coba Demo Interaktif</span>
+                    </a>
+                </div>
+
+                <!-- Technical Meta Specs -->
+                <div
+                    class="mt-8 pt-6 border-t border-borderSubtle/70 flex flex-wrap items-center justify-center gap-x-6 gap-y-2 text-xs text-textMuted font-mono">
+                    <div class="flex items-center gap-1.5">
+                        <i data-lucide="check" class="w-3.5 h-3.5 text-online"></i>
+                        <span>P99 Latency &lt;19ms</span>
+                    </div>
+                    <div class="flex items-center gap-1.5">
+                        <i data-lucide="check" class="w-3.5 h-3.5 text-online"></i>
+                        <span>Syntax Highlighting 40+ Bahasa</span>
+                    </div>
+                    <div class="flex items-center gap-1.5">
+                        <i data-lucide="check" class="w-3.5 h-3.5 text-online"></i>
+                        <span>Opus Voice 64kbps</span>
+                    </div>
+                    <div class="flex items-center gap-1.5">
+                        <i data-lucide="check" class="w-3.5 h-3.5 text-online"></i>
+                        <span>Self-Hosted / Cloud</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- INTERACTIVE LIVE MINI-APP PREVIEW (DEVSPACE WORKSPACE) -->
+            <div id="preview" class="mt-14 scroll-mt-24">
+                <!-- Interactive Channel Switcher Pills above Preview -->
+                <div class="flex items-center justify-between flex-wrap gap-3 mb-3 px-1">
+                    <div class="flex items-center gap-2 text-xs text-textMuted">
+                        <span class="inline-block w-2 h-2 rounded-full bg-accent"></span>
+                        <span class="font-medium text-textMain">Live Interactive Sandbox:</span>
+                        <span class="hidden sm:inline">Klik channel atau kirim pesan langsung di bawah</span>
+                    </div>
+                    <div class="flex items-center gap-1.5 overflow-x-auto py-1">
+                        <button onclick="switchDemoChannel('general')" id="pill_general"
+                            class="px-2.5 py-1 rounded-md text-xs font-mono bg-accent text-white transition-colors">#general</button>
+                        <button onclick="switchDemoChannel('frontend')" id="pill_frontend"
+                            class="px-2.5 py-1 rounded-md text-xs font-mono bg-sidebar hover:bg-surface text-textMuted hover:text-textMain border border-borderSubtle transition-colors">#frontend</button>
+                        <button onclick="switchDemoChannel('backend')" id="pill_backend"
+                            class="px-2.5 py-1 rounded-md text-xs font-mono bg-sidebar hover:bg-surface text-textMuted hover:text-textMain border border-borderSubtle transition-colors">#backend</button>
+                        <button onclick="switchDemoChannel('golang')" id="pill_golang"
+                            class="px-2.5 py-1 rounded-md text-xs font-mono bg-sidebar hover:bg-surface text-textMuted hover:text-textMain border border-borderSubtle transition-colors">#golang</button>
+                    </div>
+                </div>
+
+                <!-- 4-Column Application Window Frame -->
+                <div class="rounded-xl border border-borderSubtle bg-bg shadow-2xl overflow-hidden">
+                    <!-- Window Titlebar -->
+                    <div
+                        class="h-9 px-4 bg-[#0D0E10] border-b border-borderSubtle flex items-center justify-between text-xs text-textMuted select-none">
+                        <div class="flex items-center gap-2">
+                            <span class="w-2.5 h-2.5 rounded-full bg-[#3A3C42]"></span>
+                            <span class="w-2.5 h-2.5 rounded-full bg-[#3A3C42]"></span>
+                            <span class="w-2.5 h-2.5 rounded-full bg-[#3A3C42]"></span>
+                        </div>
+                        <div class="font-mono text-[11px] text-textMuted flex items-center gap-1.5">
+                            <i data-lucide="lock" class="w-3 h-3 text-online"></i>
+                            <span>app.gochat.dev/devspace/<span id="windowUrlChannel">general</span></span>
+                        </div>
+                        <div class="font-mono text-[10px] text-online flex items-center gap-1">
+                            <span class="w-1.5 h-1.5 rounded-full bg-online"></span>
+                            <span>16ms ws</span>
+                        </div>
+                    </div>
+
+                    <!-- App Grid Body -->
+                    <div class="flex h-[500px] sm:h-[540px] overflow-hidden select-none">
+
+                        <!-- Col 1: Server Rail -->
+                        <div
+                            class="hidden sm:flex w-[64px] bg-bg border-r border-borderSubtle flex-col items-center py-3 gap-2.5 shrink-0">
+                            <div
+                                class="w-11 h-11 rounded-[14px] bg-surface flex items-center justify-center text-accent">
+                                <i data-lucide="terminal" class="w-5 h-5"></i>
+                            </div>
+                            <div class="w-7 h-[1px] bg-borderSubtle"></div>
+                            <div class="relative flex items-center justify-center w-full">
+                                <div class="absolute left-0 w-1 h-8 bg-textMain rounded-r-full"></div>
+                                <div
+                                    class="w-11 h-11 rounded-[14px] bg-accent text-white font-semibold text-xs flex items-center justify-center">
+                                    DS</div>
+                            </div>
+                            <div class="w-11 h-11 rounded-[22px] bg-surface text-textMuted font-semibold text-xs flex items-center justify-center hover:rounded-[14px] hover:bg-surfaceHover transition-all cursor-pointer"
+                                onclick="showLandingToast('Server Gophers Indonesia tersedia di aplikasi penuh')">GO
+                            </div>
+                            <div class="w-11 h-11 rounded-[22px] bg-surface text-textMuted font-semibold text-xs flex items-center justify-center hover:rounded-[14px] hover:bg-surfaceHover transition-all cursor-pointer"
+                                onclick="showLandingToast('Server Cloud Native Lab tersedia di aplikasi penuh')">CN
+                            </div>
+                        </div>
+
+                        <!-- Col 2: Channel Sidebar -->
+                        <div class="hidden md:flex w-56 bg-sidebar border-r border-borderSubtle flex-col shrink-0">
+                            <div class="h-11 px-3.5 border-b border-borderSubtle flex items-center justify-between">
+                                <div class="flex items-center gap-1.5">
+                                    <span class="font-semibold text-sm text-textMain">DevSpace</span>
+                                    <span
+                                        class="px-1.5 py-0.2 text-[9px] font-mono bg-accent/15 text-accent rounded border border-accent/25">PRO</span>
+                                </div>
+                                <i data-lucide="chevron-down" class="w-4 h-4 text-textMuted"></i>
+                            </div>
+
+                            <div class="flex-1 p-2 space-y-3 overflow-y-auto">
+                                <div>
+                                    <div
+                                        class="px-1.5 py-1 text-[10px] font-semibold tracking-wider text-textMuted uppercase">
+                                        TEXT CHANNELS</div>
+                                    <div id="demoSidebarChannels" class="mt-1 space-y-0.5">
+                                        <!-- Populated by JS -->
+                                    </div>
+                                </div>
+
+                                <div>
+                                    <div
+                                        class="px-1.5 py-1 text-[10px] font-semibold tracking-wider text-textMuted uppercase">
+                                        VOICE CHANNELS</div>
+                                    <div class="mt-1 space-y-1">
+                                        <div class="px-2 py-1.5 rounded-md text-xs text-textMuted flex items-center justify-between hover:bg-surface/60 cursor-pointer"
+                                            onclick="showLandingToast('Terhubung ke simulasi Voice Daily Standup')">
+                                            <div class="flex items-center gap-2">
+                                                <i data-lucide="volume-2" class="w-3.5 h-3.5 text-online"></i>
+                                                <span class="text-textMain">Daily Standup</span>
+                                            </div>
+                                            <span
+                                                class="text-[10px] font-mono px-1.5 rounded bg-bg text-online">2</span>
+                                        </div>
+                                        <div class="pl-6 space-y-1 text-[11px] text-textMuted">
+                                            <div class="flex items-center gap-1.5">
+                                                <span class="w-1.5 h-1.5 rounded-full bg-online"></span>
+                                                <span>Rizky Pratama</span>
+                                            </div>
+                                            <div class="flex items-center gap-1.5">
+                                                <span class="w-1.5 h-1.5 rounded-full bg-online"></span>
+                                                <span>Nadia Putri</span>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- User Footer -->
+                            <div
+                                class="h-12 px-2.5 bg-[#131417] border-t border-borderSubtle flex items-center justify-between">
+                                <div class="flex items-center gap-2 min-w-0">
+                                    <div class="relative shrink-0">
+                                        <img src="https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=80&auto=format&fit=crop&q=80"
+                                            alt="Arya" class="w-7 h-7 rounded-full object-cover" />
+                                        <span
+                                            class="absolute -bottom-0.5 -right-0.5 w-2.5 h-2.5 rounded-full bg-online border-2 border-[#131417]"></span>
+                                    </div>
+                                    <div class="truncate">
+                                        <div class="text-xs font-semibold text-textMain leading-tight">Arya Wijaya</div>
+                                        <div class="text-[10px] text-textMuted leading-tight">@aryawijaya</div>
+                                    </div>
+                                </div>
+                                <div class="flex items-center gap-1 text-textMuted">
+                                    <i data-lucide="mic" class="w-3.5 h-3.5"></i>
+                                    <i data-lucide="headphones" class="w-3.5 h-3.5"></i>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Col 3: Active Chat Area -->
+                        <div class="flex-1 bg-chat flex flex-col min-w-0 select-text">
+                            <!-- Header -->
+                            <div
+                                class="h-11 px-4 border-b border-borderSubtle flex items-center justify-between gap-2 shrink-0">
+                                <div class="flex items-center gap-2 min-w-0">
+                                    <i data-lucide="hash" class="w-4 h-4 text-textMuted shrink-0"></i>
+                                    <span id="demoChatTitle" class="font-semibold text-sm text-textMain">general</span>
+                                    <span class="hidden sm:inline-block w-[1px] h-3.5 bg-borderSubtle mx-1.5"></span>
+                                    <span id="demoChatTopic"
+                                        class="hidden sm:block text-xs text-textMuted truncate">Diskusi arsitektur
+                                        sistem, engineering culture, dan rilis harian DevSpace.</span>
+                                </div>
+                                <div class="flex items-center gap-2 shrink-0">
+                                    <span
+                                        class="px-2 py-0.5 rounded bg-surface border border-borderSubtle text-[11px] font-mono text-textMuted">Live
+                                        Preview</span>
+                                </div>
+                            </div>
+
+                            <!-- Messages Feed -->
+                            <div id="demoMessagesContainer" class="flex-1 overflow-y-auto p-4 space-y-3">
+                                <!-- Populated by JS -->
+                            </div>
+
+                            <!-- Interactive Composer -->
+                            <div class="p-3 pt-1 shrink-0">
+                                <form onsubmit="handleDemoSendMessage(event)"
+                                    class="bg-surface rounded-lg border border-borderSubtle focus-within:border-accent px-3 py-1.5 flex items-center gap-2">
+                                    <i data-lucide="terminal" class="w-4 h-4 text-textMuted shrink-0"></i>
+                                    <input id="demoChatInput" type="text"
+                                        placeholder="Ketik pesan percobaan di #general lalu tekan Enter..."
+                                        class="flex-1 bg-transparent text-xs sm:text-sm text-textMain placeholder-textMuted outline-none" />
+                                    <button type="submit"
+                                        class="h-7 px-3 rounded bg-accent hover:bg-accentHover text-white text-xs font-medium transition-colors shrink-0">
+                                        Kirim
+                                    </button>
+                                </form>
+                            </div>
+                        </div>
+
+                        <!-- Col 4: Member Sidebar -->
+                        <div
+                            class="hidden lg:flex w-52 bg-sidebar border-l border-borderSubtle flex-col p-3 space-y-4 shrink-0">
+                            <div>
+                                <div class="text-[10px] font-semibold tracking-wider text-textMuted uppercase mb-2">CORE
+                                    MAINTAINERS — 2</div>
+                                <div class="space-y-1.5">
+                                    <div class="flex items-center gap-2">
+                                        <div class="relative">
+                                            <img src="https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=80&auto=format&fit=crop&q=80"
+                                                class="w-7 h-7 rounded-full object-cover" alt="Arya" />
+                                            <span
+                                                class="absolute -bottom-0.5 -right-0.5 w-2.5 h-2.5 rounded-full bg-online border-2 border-sidebar"></span>
+                                        </div>
+                                        <div class="min-w-0">
+                                            <div class="text-xs font-medium text-[#8B95F6] truncate">Arya Wijaya</div>
+                                            <div class="text-[10px] text-textMuted truncate">Neovim — worker.go</div>
+                                        </div>
+                                    </div>
+                                    <div class="flex items-center gap-2">
+                                        <div class="relative">
+                                            <img src="https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=80&auto=format&fit=crop&q=80"
+                                                class="w-7 h-7 rounded-full object-cover" alt="Rizky" />
+                                            <span
+                                                class="absolute -bottom-0.5 -right-0.5 w-2.5 h-2.5 rounded-full bg-online border-2 border-sidebar"></span>
+                                        </div>
+                                        <div class="min-w-0">
+                                            <div class="text-xs font-medium text-[#8B95F6] truncate">Rizky Pratama</div>
+                                            <div class="text-[10px] text-textMuted truncate">Reviewing PR #412</div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div>
+                                <div class="text-[10px] font-semibold tracking-wider text-textMuted uppercase mb-2">
+                                    SENIOR ENGINEERS — 3</div>
+                                <div class="space-y-1.5">
+                                    <div class="flex items-center gap-2">
+                                        <div class="relative">
+                                            <img src="https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=80&auto=format&fit=crop&q=80"
+                                                class="w-7 h-7 rounded-full object-cover" alt="Nadia" />
+                                            <span
+                                                class="absolute -bottom-0.5 -right-0.5 w-2.5 h-2.5 rounded-full bg-online border-2 border-sidebar"></span>
+                                        </div>
+                                        <div class="min-w-0">
+                                            <div class="text-xs font-medium text-[#3BA55D] truncate">Nadia Putri</div>
+                                            <div class="text-[10px] text-textMuted truncate">Figma — Tokens v3</div>
+                                        </div>
+                                    </div>
+                                    <div class="flex items-center gap-2">
+                                        <div class="relative">
+                                            <img src="https://images.unsplash.com/photo-1500648767791-00dcc994a43e?w=80&auto=format&fit=crop&q=80"
+                                                class="w-7 h-7 rounded-full object-cover" alt="Budi" />
+                                            <span
+                                                class="absolute -bottom-0.5 -right-0.5 w-2.5 h-2.5 rounded-full bg-dnd border-2 border-sidebar"></span>
+                                        </div>
+                                        <div class="min-w-0">
+                                            <div class="text-xs font-medium text-[#3BA55D] truncate">Budi Santoso</div>
+                                            <div class="text-[10px] text-textMuted truncate">Load testing gRPC</div>
+                                        </div>
+                                    </div>
+                                    <div class="flex items-center gap-2">
+                                        <div class="relative">
+                                            <img src="https://images.unsplash.com/photo-1438761681033-6461ffad8d80?w=80&auto=format&fit=crop&q=80"
+                                                class="w-7 h-7 rounded-full object-cover" alt="Siti" />
+                                            <span
+                                                class="absolute -bottom-0.5 -right-0.5 w-2.5 h-2.5 rounded-full bg-online border-2 border-sidebar"></span>
+                                        </div>
+                                        <div class="min-w-0">
+                                            <div class="text-xs font-medium text-textMain truncate">Siti Aminah</div>
+                                            <div class="text-[10px] text-textMuted truncate">PostgreSQL tuning</div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                    </div>
+                </div>
+            </div>
+
+        </div>
+    </section>
+
+    <!-- TRUSTED BY / METRICS SECTION -->
+    <section class="py-12 bg-sidebar border-b border-borderSubtle">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="grid grid-cols-2 lg:grid-cols-4 gap-6 sm:gap-8">
+                <div class="p-4 rounded-xl bg-bg border border-borderSubtle">
+                    <div class="text-2xl sm:text-3xl font-bold font-mono text-textMain">14.2ms</div>
+                    <div class="text-xs text-textMuted mt-1">Median Message Delivery (Global)</div>
+                </div>
+                <div class="p-4 rounded-xl bg-bg border border-borderSubtle">
+                    <div class="text-2xl sm:text-3xl font-bold font-mono text-textMain">99.99%</div>
+                    <div class="text-xs text-textMuted mt-1">Uptime SLA di Multi-Region Cluster</div>
+                </div>
+                <div class="p-4 rounded-xl bg-bg border border-borderSubtle">
+                    <div class="text-2xl sm:text-3xl font-bold font-mono text-textMain">2,400+</div>
+                    <div class="text-xs text-textMuted mt-1">Komunitas Engineering & Open Source</div>
+                </div>
+                <div class="p-4 rounded-xl bg-bg border border-borderSubtle">
+                    <div class="text-2xl sm:text-3xl font-bold font-mono text-textMain">0 allocs</div>
+                    <div class="text-xs text-textMuted mt-1">Zero-Allocation WebSocket Hot Path</div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- ENGINEERING FEATURES SECTION -->
+    <section id="features" class="py-20 sm:py-24 border-b border-borderSubtle">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+
+            <div class="max-w-2xl">
+                <div class="text-xs font-mono uppercase tracking-wider text-accent mb-2">DIBANGUN UNTUK DEVELOPER</div>
+                <h2 class="text-2xl sm:text-4xl font-bold tracking-tight text-textMain">
+                    Dirancang dengan presisi untuk alur kerja software engineering.
+                </h2>
+                <p class="mt-3 text-sm sm:text-base text-textMuted leading-relaxed">
+                    Tidak ada balon dekorasi berlebihan atau animasi lambat. Setiap piksel dioptimalkan untuk kepadatan
+                    informasi, kecepatan navigasi keyboard, dan diskusi teknis.
+                </p>
+            </div>
+
+            <!-- 6 Feature Cards Grid -->
+            <div class="mt-12 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
+
+                <!-- Feature 1 -->
+                <div
+                    class="p-6 rounded-xl bg-sidebar border border-borderSubtle hover:border-[#383B42] transition-colors flex flex-col justify-between">
+                    <div>
+                        <div
+                            class="w-10 h-10 rounded-lg bg-surface border border-borderSubtle flex items-center justify-center text-accent mb-4">
+                            <i data-lucide="code-2" class="w-5 h-5"></i>
+                        </div>
+                        <h3 class="text-base font-semibold text-textMain">Native Code Blocks & Diff View</h3>
+                        <p class="mt-2 text-sm text-textMuted leading-relaxed">
+                            Paste potongan kode Go, TypeScript, SQL, atau Rust dengan syntax highlighting instan, nomor
+                            baris, dan tombol salin satu klik tanpa merusak indentasi.
+                        </p>
+                    </div>
+                    <div
+                        class="mt-5 pt-4 border-t border-borderSubtle flex items-center justify-between text-xs font-mono text-textMuted">
+                        <span>JetBrains Mono Built-in</span>
+                        <span class="text-online">Ready</span>
+                    </div>
+                </div>
+
+                <!-- Feature 2 -->
+                <div
+                    class="p-6 rounded-xl bg-sidebar border border-borderSubtle hover:border-[#383B42] transition-colors flex flex-col justify-between">
+                    <div>
+                        <div
+                            class="w-10 h-10 rounded-lg bg-surface border border-borderSubtle flex items-center justify-center text-accent mb-4">
+                            <i data-lucide="radio" class="w-5 h-5"></i>
+                        </div>
+                        <h3 class="text-base font-semibold text-textMain">Always-On Voice Rooms</h3>
+                        <p class="mt-2 text-sm text-textMuted leading-relaxed">
+                            Masuk ke channel Daily Standup atau Pair Programming dalam satu klik tanpa perlu membuat
+                            link meeting baru. Dilengkapi noise suppression berbasis RNNoise.
+                        </p>
+                    </div>
+                    <div
+                        class="mt-5 pt-4 border-t border-borderSubtle flex items-center justify-between text-xs font-mono text-textMuted">
+                        <span>WebRTC SFU Mesh</span>
+                        <span class="text-online">64kbps Opus</span>
+                    </div>
+                </div>
+
+                <!-- Feature 3 -->
+                <div
+                    class="p-6 rounded-xl bg-sidebar border border-borderSubtle hover:border-[#383B42] transition-colors flex flex-col justify-between">
+                    <div>
+                        <div
+                            class="w-10 h-10 rounded-lg bg-surface border border-borderSubtle flex items-center justify-center text-accent mb-4">
+                            <i data-lucide="command" class="w-5 h-5"></i>
+                        </div>
+                        <h3 class="text-base font-semibold text-textMain">Keyboard-First Navigation</h3>
+                        <p class="mt-2 text-sm text-textMuted leading-relaxed">
+                            Berpindah antar server, cari pesan spesifik di ribuan riwayat diskusi, atau ubah status
+                            kehadiran ke Do Not Disturb tanpa menyentuh mouse.
+                        </p>
+                    </div>
+                    <div
+                        class="mt-5 pt-4 border-t border-borderSubtle flex items-center justify-between text-xs font-mono text-textMuted">
+                        <span>Shortcut Global</span>
+                        <kbd class="px-1.5 py-0.5 bg-bg border border-borderSubtle rounded text-textMain">⌘ + K</kbd>
+                    </div>
+                </div>
+
+                <!-- Feature 4 -->
+                <div
+                    class="p-6 rounded-xl bg-sidebar border border-borderSubtle hover:border-[#383B42] transition-colors flex flex-col justify-between">
+                    <div>
+                        <div
+                            class="w-10 h-10 rounded-lg bg-surface border border-borderSubtle flex items-center justify-center text-accent mb-4">
+                            <i data-lucide="git-pull-request" class="w-5 h-5"></i>
+                        </div>
+                        <h3 class="text-base font-semibold text-textMain">GitHub, GitLab & CI Webhooks</h3>
+                        <p class="mt-2 text-sm text-textMuted leading-relaxed">
+                            Integrasikan notifikasi Pull Request, status deployment Kubernetes, dan alert Prometheus
+                            langsung ke channel #backend atau #devops secara terstruktur.
+                        </p>
+                    </div>
+                    <div
+                        class="mt-5 pt-4 border-t border-borderSubtle flex items-center justify-between text-xs font-mono text-textMuted">
+                        <span>REST & gRPC Webhook</span>
+                        <span class="text-accent">v2 API</span>
+                    </div>
+                </div>
+
+                <!-- Feature 5 -->
+                <div
+                    class="p-6 rounded-xl bg-sidebar border border-borderSubtle hover:border-[#383B42] transition-colors flex flex-col justify-between">
+                    <div>
+                        <div
+                            class="w-10 h-10 rounded-lg bg-surface border border-borderSubtle flex items-center justify-center text-accent mb-4">
+                            <i data-lucide="shield-check" class="w-5 h-5"></i>
+                        </div>
+                        <h3 class="text-base font-semibold text-textMain">Role-Based Access & Badges</h3>
+                        <p class="mt-2 text-sm text-textMuted leading-relaxed">
+                            Kelola izin terperinci untuk Core Maintainers, Staff Engineers, DBA, hingga anggota
+                            komunitas publik dengan sistem role berhirarki yang jelas.
+                        </p>
+                    </div>
+                    <div
+                        class="mt-5 pt-4 border-t border-borderSubtle flex items-center justify-between text-xs font-mono text-textMuted">
+                        <span>Granular ACL</span>
+                        <span class="text-online">SSO SAML 2.0</span>
+                    </div>
+                </div>
+
+                <!-- Feature 6 -->
+                <div
+                    class="p-6 rounded-xl bg-sidebar border border-borderSubtle hover:border-[#383B42] transition-colors flex flex-col justify-between">
+                    <div>
+                        <div
+                            class="w-10 h-10 rounded-lg bg-surface border border-borderSubtle flex items-center justify-center text-accent mb-4">
+                            <i data-lucide="smartphone" class="w-5 h-5"></i>
+                        </div>
+                        <h3 class="text-base font-semibold text-textMain">Responsif di Semua Viewport</h3>
+                        <p class="mt-2 text-sm text-textMuted leading-relaxed">
+                            Layout empat kolom penuh di monitor desktop 1440px yang beradaptasi mulus menjadi slide-over
+                            drawer ergonomis pada tablet 768px dan layar mobile 375px.
+                        </p>
+                    </div>
+                    <div
+                        class="mt-5 pt-4 border-t border-borderSubtle flex items-center justify-between text-xs font-mono text-textMuted">
+                        <span>Zero Horizontal Overflow</span>
+                        <span class="text-online">60 FPS UI</span>
+                    </div>
+                </div>
+
+            </div>
+        </div>
+    </section>
+
+    <!-- ARCHITECTURE &WEBHOOK INTEGRATION SECTION -->
+    <section id="architecture" class="py-20 sm:py-24 bg-sidebar border-b border-borderSubtle">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="grid grid-cols-1 lg:grid-cols-12 gap-10 items-center">
+
+                <!-- Left Explanation -->
+                <div class="lg:col-span-5 space-y-5">
+                    <div class="text-xs font-mono uppercase tracking-wider text-accent">ARSITEKTUR & INTEGRASI</div>
+                    <h2 class="text-2xl sm:text-3xl font-bold tracking-tight text-textMain">
+                        Kirim event dari pipeline CI/CD hanya dengan beberapa baris kode.
+                    </h2>
+                    <p class="text-sm sm:text-base text-textMuted leading-relaxed">
+                        GoChat menyediakan SDK resmi dan endpoint webhook berkecepatan tinggi. Kirim hasil benchmark,
+                        status rilis container, atau alert insiden langsung ke channel tim Anda.
+                    </p>
+
+                    <div class="space-y-3 pt-2">
+                        <div class="flex items-start gap-3">
+                            <div
+                                class="w-6 h-6 rounded bg-surface border border-borderSubtle flex items-center justify-center text-online shrink-0 mt-0.5">
+                                <i data-lucide="check" class="w-3.5 h-3.5"></i>
+                            </div>
+                            <div>
+                                <div class="text-sm font-semibold text-textMain">Multiplexed WebSocket Gateway</div>
+                                <div class="text-xs text-textMuted mt-0.5">Satu koneksi TCP persisten menangani seluruh
+                                    channel, indikator mengetik, dan presence anggota.</div>
+                            </div>
+                        </div>
+                        <div class="flex items-start gap-3">
+                            <div
+                                class="w-6 h-6 rounded bg-surface border border-borderSubtle flex items-center justify-center text-online shrink-0 mt-0.5">
+                                <i data-lucide="check" class="w-3.5 h-3.5"></i>
+                            </div>
+                            <div>
+                                <div class="text-sm font-semibold text-textMain">Penyimpanan Terpartisi Waktu</div>
+                                <div class="text-xs text-textMuted mt-0.5">Pencarian teks instan pada jutaan pesan
+                                    historis dengan partial index yang teroptimasi.</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Right Interactive Code Tabs -->
+                <div class="lg:col-span-7">
+                    <div class="rounded-xl bg-bg border border-borderSubtle overflow-hidden shadow-xl">
+                        <!-- Code Header Tabs -->
+                        <div
+                            class="px-4 py-2.5 bg-[#141518] border-b border-borderSubtle flex items-center justify-between">
+                            <div class="flex items-center gap-1.5">
+                                <button onclick="switchCodeTab('go')" id="tab_go"
+                                    class="px-3 py-1 rounded text-xs font-mono font-medium bg-surface text-textMain border border-borderSubtle">webhook_notify.go</button>
+                                <button onclick="switchCodeTab('curl')" id="tab_curl"
+                                    class="px-3 py-1 rounded text-xs font-mono font-medium text-textMuted hover:text-textMain">deploy_hook.sh</button>
+                                <button onclick="switchCodeTab('ts')" id="tab_ts"
+                                    class="px-3 py-1 rounded text-xs font-mono font-medium text-textMuted hover:text-textMain">bot_client.ts</button>
+                            </div>
+                            <button onclick="copyLandingCode()"
+                                class="text-xs font-mono text-textMuted hover:text-textMain flex items-center gap-1.5">
+                                <i data-lucide="copy" class="w-3.5 h-3.5"></i>
+                                <span id="copyCodeBtnText">Salin</span>
+                            </button>
+                        </div>
+
+                        <!-- Code Content -->
+                        <pre class="p-4 sm:p-5 text-xs sm:text-[13px] leading-relaxed overflow-x-auto text-[#D4D4D8]"><code id="architectureCodeDisplay">package main
+
+import (
+	"context"
+	"time"
+	"github.com/devspace-id/gochat-sdk"
+)
+
+func NotifyRelease(ctx context.Context) error {
+	client := gochat.NewClient("gc_live_98f2a41c8b")
+
+	return client.Channel("general").Send(ctx, &gochat.Message{
+		Author: "Release Bot",
+		Badge:  "CI/CD",
+		Text:   "Deployment `api-gateway v2.14.0` selesai. Latensi P99: `19ms`.",
+		CodeAttachment: &gochat.CodeBlock{
+			Language: "sql",
+			Content:  "SELECT count(*) FROM active_sessions WHERE region = 'ap-southeast-3';",
+		},
+		Timestamp: time.Now(),
+	})
+}</code></pre>
+                    </div>
+                </div>
+
+            </div>
+        </div>
+    </section>
+
+    <!-- PRICING SECTION -->
+    <section id="pricing" class="py-20 sm:py-24 border-b border-borderSubtle">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+
+            <div class="max-w-2xl mx-auto text-center">
+                <div class="text-xs font-mono uppercase tracking-wider text-accent mb-2">HARGA TRANSPARAN</div>
+                <h2 class="text-2xl sm:text-4xl font-bold tracking-tight text-textMain">
+                    Mulai gratis untuk komunitas, skala penuh untuk enterprise.
+                </h2>
+                <p class="mt-3 text-sm sm:text-base text-textMuted">
+                    Tanpa biaya tersembunyi per channel. Pilih paket yang sesuai dengan ukuran komunitas atau organisasi
+                    engineering Anda.
+                </p>
+
+                <!-- Billing Cycle Toggle -->
+                <div class="mt-6 inline-flex items-center p-1 rounded-lg bg-sidebar border border-borderSubtle">
+                    <button id="billMonthlyBtn" onclick="setBillingCycle('monthly')"
+                        class="px-3.5 py-1.5 rounded-md text-xs font-medium bg-surface text-textMain transition-colors">
+                        Bulanan
+                    </button>
+                    <button id="billAnnualBtn" onclick="setBillingCycle('annual')"
+                        class="px-3.5 py-1.5 rounded-md text-xs font-medium text-textMuted hover:text-textMain transition-colors flex items-center gap-1.5">
+                        <span>Tahunan</span>
+                        <span class="px-1.5 py-0.2 text-[10px] font-mono bg-online/15 text-online rounded">Hemat
+                            20%</span>
+                    </button>
+                </div>
+            </div>
+
+            <!-- 3 Pricing Tiers -->
+            <div class="mt-12 grid grid-cols-1 lg:grid-cols-3 gap-6">
+
+                <!-- Tier 1: Community -->
+                <div class="p-6 sm:p-7 rounded-xl bg-sidebar border border-borderSubtle flex flex-col justify-between">
+                    <div>
+                        <div class="flex items-center justify-between">
+                            <h3 class="text-lg font-semibold text-textMain">Community</h3>
+                            <span
+                                class="px-2 py-0.5 text-[11px] font-mono bg-surface text-textMuted rounded border border-borderSubtle">OPEN
+                                SOURCE</span>
+                        </div>
+                        <p class="mt-2 text-xs text-textMuted leading-relaxed">
+                            Untuk grup belajar programming, komunitas lokal, dan proyek open source.
+                        </p>
+                        <div class="mt-6 flex items-baseline gap-1">
+                            <span class="text-3xl font-bold font-mono text-textMain">Rp 0</span>
+                            <span class="text-xs text-textMuted">/ selamanya</span>
+                        </div>
+
+                        <ul class="mt-6 space-y-3 text-xs sm:text-sm text-textMuted border-t border-borderSubtle pt-6">
+                            <li class="flex items-center gap-2.5">
+                                <i data-lucide="check" class="w-4 h-4 text-online shrink-0"></i>
+                                <span>Anggota & channel teks tak terbatas</span>
+                            </li>
+                            <li class="flex items-center gap-2.5">
+                                <i data-lucide="check" class="w-4 h-4 text-online shrink-0"></i>
+                                <span>Riwayat pesan penuh 90 hari terakhir</span>
+                            </li>
+                            <li class="flex items-center gap-2.5">
+                                <i data-lucide="check" class="w-4 h-4 text-online shrink-0"></i>
+                                <span>Voice channel hingga 25 partisipan/ruang</span>
+                            </li>
+                            <li class="flex items-center gap-2.5">
+                                <i data-lucide="check" class="w-4 h-4 text-online shrink-0"></i>
+                                <span>Syntax highlighting & lampiran kode</span>
+                            </li>
+                        </ul>
+                    </div>
+
+                    <button onclick="openAuthModal('register')"
+                        class="mt-8 w-full h-10 rounded-lg bg-surface hover:bg-surfaceHover border border-borderSubtle text-xs font-medium text-textMain transition-colors">
+                        Buat Server Komunitas
+                    </button>
+                </div>
+
+                <!-- Tier 2: DevSpace Pro (Highlighted) -->
+                <div
+                    class="p-6 sm:p-7 rounded-xl bg-chat border-2 border-accent flex flex-col justify-between relative">
+                    <div>
+                        <div class="flex items-center justify-between">
+                            <h3 class="text-lg font-semibold text-textMain">Engineering Pro</h3>
+                            <span
+                                class="px-2 py-0.5 text-[10px] font-mono font-semibold bg-accent text-white rounded">POPULER</span>
+                        </div>
+                        <p class="mt-2 text-xs text-textMuted leading-relaxed">
+                            Untuk startup teknologi, software house, dan komunitas engineering aktif.
+                        </p>
+                        <div class="mt-6 flex items-baseline gap-1">
+                            <span id="proPriceValue" class="text-3xl font-bold font-mono text-textMain">Rp 79.000</span>
+                            <span class="text-xs text-textMuted">/ kreator server / bln</span>
+                        </div>
+
+                        <ul class="mt-6 space-y-3 text-xs sm:text-sm text-textMain border-t border-borderSubtle pt-6">
+                            <li class="flex items-center gap-2.5">
+                                <i data-lucide="check" class="w-4 h-4 text-accent shrink-0"></i>
+                                <span>Riwayat pesan & pencarian kode selamanya</span>
+                            </li>
+                            <li class="flex items-center gap-2.5">
+                                <i data-lucide="check" class="w-4 h-4 text-accent shrink-0"></i>
+                                <span>Voice HD Opus 96kbps + Screen Sharing 60fps</span>
+                            </li>
+                            <li class="flex items-center gap-2.5">
+                                <i data-lucide="check" class="w-4 h-4 text-accent shrink-0"></i>
+                                <span>Integrasi GitHub, GitLab & Webhook tanpa batas</span>
+                            </li>
+                            <li class="flex items-center gap-2.5">
+                                <i data-lucide="check" class="w-4 h-4 text-accent shrink-0"></i>
+                                <span>Custom Role Badges (STAFF, CORE, FE, SRE)</span>
+                            </li>
+                            <li class="flex items-center gap-2.5">
+                                <i data-lucide="check" class="w-4 h-4 text-accent shrink-0"></i>
+                                <span>Upload lampiran hingga 100 MB per file</span>
+                            </li>
+                        </ul>
+                    </div>
+
+                    <button onclick="openAuthModal('register')"
+                        class="mt-8 w-full h-10 rounded-lg bg-accent hover:bg-accentHover text-xs font-medium text-white transition-colors">
+                        Coba Engineering Pro 14 Hari
+                    </button>
+                </div>
+
+                <!-- Tier 3: Enterprise -->
+                <div class="p-6 sm:p-7 rounded-xl bg-sidebar border border-borderSubtle flex flex-col justify-between">
+                    <div>
+                        <div class="flex items-center justify-between">
+                            <h3 class="text-lg font-semibold text-textMain">Self-Hosted / Enterprise</h3>
+                            <span
+                                class="px-2 py-0.5 text-[11px] font-mono bg-surface text-textMuted rounded border border-borderSubtle">ON-PREM</span>
+                        </div>
+                        <p class="mt-2 text-xs text-textMuted leading-relaxed">
+                            Untuk perusahaan dengan kebutuhan kepatuhan data ketat & deployment VPC sendiri.
+                        </p>
+                        <div class="mt-6 flex items-baseline gap-1">
+                            <span class="text-3xl font-bold font-mono text-textMain">Kustom</span>
+                            <span class="text-xs text-textMuted">/ lisensi cluster</span>
+                        </div>
+
+                        <ul class="mt-6 space-y-3 text-xs sm:text-sm text-textMuted border-t border-borderSubtle pt-6">
+                            <li class="flex items-center gap-2.5">
+                                <i data-lucide="check" class="w-4 h-4 text-online shrink-0"></i>
+                                <span>Deployment Docker / Helm Chart di Kubernetes</span>
+                            </li>
+                            <li class="flex items-center gap-2.5">
+                                <i data-lucide="check" class="w-4 h-4 text-online shrink-0"></i>
+                                <span>SAML 2.0, Okta, dan Google Workspace SSO</span>
+                            </li>
+                            <li class="flex items-center gap-2.5">
+                                <i data-lucide="check" class="w-4 h-4 text-online shrink-0"></i>
+                                <span>Audit log lengkap & enkripsi kunci privat</span>
+                            </li>
+                            <li class="flex items-center gap-2.5">
+                                <i data-lucide="check" class="w-4 h-4 text-online shrink-0"></i>
+                                <span>Dukungan dedicated Solutions Architect 24/7</span>
+                            </li>
+                        </ul>
+                    </div>
+
+                    <button onclick="showLandingToast('Tim Enterprise kami akan menghubungi Anda melalui email')"
+                        class="mt-8 w-full h-10 rounded-lg bg-surface hover:bg-surfaceHover border border-borderSubtle text-xs font-medium text-textMain transition-colors">
+                        Hubungi Tim Infrastruktur
+                    </button>
+                </div>
+
+            </div>
+        </div>
+    </section>
+
+    <!-- FAQ SECTION -->
+    <section id="faq" class="py-20 sm:py-24 bg-sidebar border-b border-borderSubtle">
+        <div class="max-w-3xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="text-center mb-12">
+                <div class="text-xs font-mono uppercase tracking-wider text-accent mb-2">PERTANYAAN UMUM</div>
+                <h2 class="text-2xl sm:text-3xl font-bold tracking-tight text-textMain">
+                    Hal yang sering ditanyakan engineer.
+                </h2>
+            </div>
+
+            <div class="space-y-3" id="faqContainer">
+                <!-- Populated by JS -->
+            </div>
+        </div>
+    </section>
+
+    <!-- FINAL CTA BANNER -->
+    <section class="py-20 sm:py-24 bg-bg relative overflow-hidden">
+        <div class="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
+            <div
+                class="w-12 h-12 rounded-2xl bg-surface border border-borderSubtle flex items-center justify-center mx-auto mb-5 text-accent">
+                <i data-lucide="terminal" class="w-6 h-6"></i>
+            </div>
+            <h2 class="text-2xl sm:text-4xl font-bold tracking-tight text-textMain">
+                Siap membangun ruang diskusi teknis yang lebih fokus?
+            </h2>
+            <p class="mt-4 text-sm sm:text-base text-textMuted max-w-xl mx-auto leading-relaxed">
+                Buat server komunitas Anda dalam 30 detik. Undang rekan tim, atur channel kategori `#frontend`,
+                `#backend`, dan `#golang`, lalu mulai berkolaborasi.
+            </p>
+            <div class="mt-8 flex flex-col sm:flex-row items-center justify-center gap-3">
+                <button onclick="openAuthModal('register')"
+                    class="w-full sm:w-auto h-11 px-6 rounded-lg bg-accent hover:bg-accentHover text-sm font-medium text-white transition-colors">
+                    Buka GoChat Web App Sekarang
+                </button>
+                <button onclick="openCommandModal()"
+                    class="w-full sm:w-auto h-11 px-5 rounded-lg bg-sidebar hover:bg-surface border border-borderSubtle text-sm font-medium text-textMuted hover:text-textMain transition-colors">
+                    Eksplorasi Dokumentasi API
+                </button>
+            </div>
+        </div>
+    </section>
+
+    <!-- FOOTER -->
+    <footer class="bg-sidebar border-t border-borderSubtle py-12 text-xs text-textMuted">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="grid grid-cols-2 md:grid-cols-5 gap-8 pb-10 border-b border-borderSubtle">
+                <div class="col-span-2">
+                    <div class="flex items-center gap-2.5 text-textMain font-bold text-sm">
+                        <div
+                            class="w-7 h-7 rounded-lg bg-surface border border-borderSubtle flex items-center justify-center text-accent">
+                            <i data-lucide="terminal" class="w-4 h-4"></i>
+                        </div>
+                        <span>GoChat Platform</span>
+                    </div>
+                    <p class="mt-3 text-xs text-textMuted max-w-xs leading-relaxed">
+                        Platform komunikasi real-time berlatensi rendah untuk komunitas software engineering dan tim
+                        produk modern.
+                    </p>
+                    <div class="mt-4 flex items-center gap-2 font-mono text-[11px] text-online">
+                        <span class="w-2 h-2 rounded-full bg-online"></span>
+                        <span>Semua sistem operasional (Jakarta & Singapore)</span>
+                    </div>
+                </div>
+
+                <div>
+                    <div class="font-semibold text-textMain uppercase tracking-wider text-[11px] mb-3">Produk</div>
+                    <ul class="space-y-2">
+                        <li><a href="#preview" class="hover:text-textMain transition-colors">Web Client</a></li>
+                        <li><a href="#features" class="hover:text-textMain transition-colors">Voice Engine</a></li>
+                        <li><a href="#architecture" class="hover:text-textMain transition-colors">Go SDK & Webhooks</a>
+                        </li>
+                        <li><a href="#pricing" class="hover:text-textMain transition-colors">Self-Hosted</a></li>
+                    </ul>
+                </div>
+
+                <div>
+                    <div class="font-semibold text-textMain uppercase tracking-wider text-[11px] mb-3">Komunitas</div>
+                    <ul class="space-y-2">
+                        <li><a href="#preview" class="hover:text-textMain transition-colors">DevSpace Indonesia</a></li>
+                        <li><a href="#preview" class="hover:text-textMain transition-colors">Gophers ID</a></li>
+                        <li><a href="#preview" class="hover:text-textMain transition-colors">Cloud Native Lab</a></li>
+                        <li><a href="#faq" class="hover:text-textMain transition-colors">Panduan Moderator</a></li>
+                    </ul>
+                </div>
+
+                <div>
+                    <div class="font-semibold text-textMain uppercase tracking-wider text-[11px] mb-3">Legal & Keamanan
+                    </div>
+                    <ul class="space-y-2">
+                        <li><a href="#" onclick="showLandingToast('Dokumen Kebijakan Privasi dibuka'); return false;"
+                                class="hover:text-textMain transition-colors">Kebijakan Privasi</a></li>
+                        <li><a href="#" onclick="showLandingToast('Ketentuan Layanan dibuka'); return false;"
+                                class="hover:text-textMain transition-colors">Ketentuan Layanan</a></li>
+                        <li><a href="#"
+                                onclick="showLandingToast('Laporan SOC2 Type II tersedia untuk Enterprise'); return false;"
+                                class="hover:text-textMain transition-colors">Keamanan SOC2</a></li>
+                    </ul>
+                </div>
+            </div>
+
+            <div class="pt-6 flex flex-col sm:flex-row items-center justify-between gap-4">
+                <div>© 2026 GoChat Engineering Inc. Seluruh hak cipta dilindungi.</div>
+                <div class="font-mono text-[11px] text-textMuted">Dibangun dengan presisi • #111214 Dark UI</div>
+            </div>
+        </div>
+    </footer>
+
+    <!-- AUTH / LAUNCH APP MODAL -->
+    <div id="authModal" class="hidden fixed inset-0 z-50 bg-black/75 flex items-center justify-center p-4">
+        <div class="w-full max-w-md rounded-xl bg-sidebar border border-borderSubtle shadow-2xl overflow-hidden">
+            <div class="px-5 py-4 border-b border-borderSubtle flex items-center justify-between">
+                <div class="flex items-center gap-2">
+                    <i data-lucide="terminal" class="w-4 h-4 text-accent"></i>
+                    <h3 id="authModalTitle" class="text-sm font-semibold text-textMain">Masuk ke Workspace GoChat</h3>
+                </div>
+                <button onclick="closeAuthModal()"
+                    class="p-1 rounded hover:bg-surface text-textMuted hover:text-textMain">
+                    <i data-lucide="x" class="w-4 h-4"></i>
+                </button>
+            </div>
+
+            <form onsubmit="handleAuthSubmit(event)" class="p-5 space-y-4">
+                <div>
+                    <label class="block text-xs font-semibold uppercase tracking-wider text-textMuted mb-1.5">Email
+                        Engineering / GitHub</label>
+                    <input id="authEmailInput" type="email" required placeholder="arya@devspace.id"
+                        class="w-full h-9 px-3 rounded-md bg-bg border border-borderSubtle focus:border-accent text-sm text-textMain outline-none" />
+                </div>
+                <div>
+                    <label class="block text-xs font-semibold uppercase tracking-wider text-textMuted mb-1.5">Nama
+                        Handle</label>
+                    <input id="authHandleInput" type="text" required placeholder="@aryawijaya"
+                        class="w-full h-9 px-3 rounded-md bg-bg border border-borderSubtle focus:border-accent text-sm font-mono text-textMain outline-none" />
+                </div>
+                <div class="pt-2 flex items-center justify-end gap-2">
+                    <button type="button" onclick="closeAuthModal()"
+                        class="h-9 px-3.5 rounded-md bg-surface hover:bg-surfaceHover text-xs font-medium text-textMuted hover:text-textMain">
+                        Batal
+                    </button>
+                    <button type="submit"
+                        class="h-9 px-4 rounded-md bg-accent hover:bg-accentHover text-xs font-medium text-white flex items-center gap-1.5">
+                        <span>Lanjutkan ke DevSpace</span>
+                        <i data-lucide="arrow-right" class="w-3.5 h-3.5"></i>
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- COMMAND PALETTE MODAL (⌘K) -->
+    <div id="commandModal" class="hidden fixed inset-0 z-50 bg-black/75 flex items-start justify-center pt-20 p-4"
+        onclick="if(event.target === this) closeCommandModal()">
+        <div class="w-full max-w-lg rounded-xl bg-sidebar border border-borderSubtle shadow-2xl overflow-hidden">
+            <div class="px-3.5 py-2.5 border-b border-borderSubtle flex items-center gap-2.5">
+                <i data-lucide="search" class="w-4 h-4 text-textMuted"></i>
+                <input id="commandSearchInput" type="text" placeholder="Ketik perintah atau loncat ke bagian halaman..."
+                    oninput="filterCommands(this.value)"
+                    class="flex-1 bg-transparent text-sm text-textMain placeholder-textMuted outline-none" />
+                <kbd
+                    class="px-1.5 py-0.5 text-[10px] font-mono bg-bg border border-borderSubtle rounded text-textMuted">ESC</kbd>
+            </div>
+            <div id="commandList" class="p-2 max-h-64 overflow-y-auto space-y-1">
+                <!-- Populated by JS -->
+            </div>
+        </div>
+    </div>
+
+    <!-- TOAST CONTAINER -->
+    <div id="landingToastContainer"
+        class="fixed bottom-4 right-4 z-50 flex flex-col gap-2 max-w-xs w-full pointer-events-none"></div>
+
+    <!-- SCRIPT -->
+    <script>
+        // ==========================================
+        // 1. INTERACTIVE HERO PREVIEW STATE & DATA
+        // ==========================================
+        let activeDemoChannel = 'general';
+
+        const demoChannelsMeta = {
+            general: {
+                name: 'general',
+                topic: 'Diskusi arsitektur sistem, engineering culture, dan rilis harian DevSpace.'
+            },
+            frontend: {
+                name: 'frontend',
+                topic: 'React 19, Next.js App Router, CSS Architecture & Design Systems.'
+            },
+            backend: {
+                name: 'backend',
+                topic: 'PostgreSQL tuning, Distributed Systems, gRPC, Redis & Microservices.'
+            },
+            golang: {
+                name: 'golang',
+                topic: 'Goroutines, runtime scheduler, PGO, memory profiling, dan Go 1.24+.'
+            }
+        };
+
+        const demoMessages = {
+            general: [
+                {
+                    user: 'Rizky Pratama',
+                    badge: 'CORE',
+                    time: '09:14',
+                    avatar: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=80&auto=format&fit=crop&q=80',
+                    text: 'Pagi tim! Deployment `api-gateway v2.14.0` ke cluster production Jakarta selesai tanpa downtime. Latensi P99 turun dari `48ms` ke `19ms`.',
+                    reactions: ['🚀 6', '🔥 4']
+                },
+                {
+                    user: 'Nadia Putri',
+                    badge: 'FE LEAD',
+                    time: '09:18',
+                    avatar: 'https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=80&auto=format&fit=crop&q=80',
+                    text: 'Mantap banget @Rizky Pratama! Di sisi dashboard observabilitas juga kerasa jauh lebih responsif waktu nge-load time-series log.',
+                    reactions: ['👍 3']
+                },
+                {
+                    user: 'Budi Santoso',
+                    badge: 'STAFF',
+                    time: '09:25',
+                    avatar: 'https://images.unsplash.com/photo-1500648767791-00dcc994a43e?w=80&auto=format&fit=crop&q=80',
+                    text: 'Hasil load testing k6 sudah aman. Jam 14:00 WIB kita sinkronisasi singkat di voice channel **Daily Standup** ya.',
+                    reactions: ['⚡ 5']
+                }
+            ],
+            frontend: [
+                {
+                    user: 'Nadia Putri',
+                    badge: 'FE LEAD',
+                    time: '10:05',
+                    avatar: 'https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=80&auto=format&fit=crop&q=80',
+                    text: 'Untuk komponen tabel virtualized yang menangani 50.000 baris log real-time, kita pakai `@tanstack/react-virtual` dengan `overscan: 8`.',
+                    reactions: ['🔥 5']
+                },
+                {
+                    user: 'Arya Wijaya',
+                    badge: 'STAFF',
+                    time: '10:12',
+                    avatar: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=80&auto=format&fit=crop&q=80',
+                    text: 'Setuju. Pastikan token warna surface `#2B2D31` dan border `#26282D` tetap konsisten di seluruh komponen modal.',
+                    reactions: ['💯 3']
+                }
+            ],
+            backend: [
+                {
+                    user: 'Siti Aminah',
+                    badge: 'DBA',
+                    time: '11:02',
+                    avatar: 'https://images.unsplash.com/photo-1438761681033-6461ffad8d80?w=80&auto=format&fit=crop&q=80',
+                    text: 'Setelah kita tambah partial composite index `idx_events_org_created_unread`, query time di PostgreSQL turun dari `1.4s` jadi `6.2ms`.',
+                    reactions: ['⚡ 7', '🔥 3']
+                }
+            ],
+            golang: [
+                {
+                    user: 'Budi Santoso',
+                    badge: 'STAFF',
+                    time: '13:15',
+                    avatar: 'https://images.unsplash.com/photo-1500648767791-00dcc994a43e?w=80&auto=format&fit=crop&q=80',
+                    text: 'Kombinasi `errgroup.WithContext` dan `sync.Pool` buat buffer payload bikin GC pause di Go 1.24 rata di bawah `200µs`.',
+                    reactions: ['🚀 8', '💯 5']
+                }
+            ]
+        };
+
+        function formatPreviewText(text) {
+            return text
+                .replace(/`([^`]+)`/g, '<code class="px-1.5 py-0.5 rounded bg-bg border border-borderSubtle font-mono text-[11px] text-[#E5C07B]">$1</code>')
+                .replace(/\*\*([^*]+)\*\*/g, '<strong class="font-semibold text-white">$1</strong>')
+                .replace(/(@[A-Za-z0-9_]+(?:\s[A-Za-z0-9_]+)?)/g, '<span class="px-1 py-0.2 rounded bg-accent/20 text-[#99A2FF] font-medium">$1</span>');
+        }
+
+        function renderDemoPreview() {
+            // Update Pills
+            Object.keys(demoChannelsMeta).forEach(chId => {
+                const pill = document.getElementById('pill_' + chId);
+                if (!pill) return;
+                if (chId === activeDemoChannel) {
+                    pill.className = 'px-2.5 py-1 rounded-md text-xs font-mono bg-accent text-white transition-colors';
+                } else {
+                    pill.className = 'px-2.5 py-1 rounded-md text-xs font-mono bg-sidebar hover:bg-surface text-textMuted hover:text-textMain border border-borderSubtle transition-colors';
+                }
+            });
+
+            // Update Sidebar inside Preview
+            const sidebarEl = document.getElementById('demoSidebarChannels');
+            sidebarEl.innerHTML = Object.keys(demoChannelsMeta).map(chId => {
+                const isActive = chId === activeDemoChannel;
+                return `
+          <button onclick="switchDemoChannel('${chId}')" class="w-full px-2 py-1.5 rounded-md flex items-center gap-2 text-xs transition-colors ${isActive ? 'bg-surface text-textMain font-medium' : 'text-textMuted hover:bg-surface/60 hover:text-textMain'
+                    }">
+            <span class="font-mono ${isActive ? 'text-accent' : 'text-textMuted'}">#</span>
+            <span>${chId}</span>
+          </button>
+        `;
+            }).join('');
+
+            // Update Header & URL
+            const meta = demoChannelsMeta[activeDemoChannel];
+            document.getElementById('windowUrlChannel').textContent = meta.name;
+            document.getElementById('demoChatTitle').textContent = meta.name;
+            document.getElementById('demoChatTopic').textContent = meta.topic;
+            document.getElementById('demoChatInput').placeholder = `Ketik pesan percobaan di #${meta.name} lalu tekan Enter...`;
+
+            // Update Messages
+            const feed = document.getElementById('demoMessagesContainer');
+            const list = demoMessages[activeDemoChannel] || [];
+            feed.innerHTML = list.map(m => `
+        <div class="flex items-start gap-3 p-2 rounded-lg hover:bg-[#1D1E22] transition-colors">
+          <img src="${m.avatar}" alt="${m.user}" class="w-8 h-8 rounded-full object-cover shrink-0 mt-0.5" />
+          <div class="min-w-0 flex-1">
+            <div class="flex items-baseline gap-2">
+              <span class="font-semibold text-xs sm:text-[13px] text-textMain">${m.user}</span>
+              <span class="px-1.5 py-0.2 rounded text-[9px] font-mono bg-surface text-accent border border-borderSubtle">${m.badge}</span>
+              <span class="text-[10px] text-textMuted">Hari ini ${m.time}</span>
+            </div>
+            <div class="text-xs sm:text-[13px] text-[#DBDEE1] leading-relaxed mt-0.5">${formatPreviewText(m.text)}</div>
+            <div class="flex items-center gap-1.5 mt-2">
+              ${(m.reactions || []).map(r => `
+                <span class="px-2 py-0.5 rounded bg-surface border border-borderSubtle text-[11px] text-textMuted font-mono">${r}</span>
+              `).join('')}
+            </div>
+          </div>
+        </div>
+      `).join('');
+
+            feed.scrollTop = feed.scrollHeight;
+            lucide.createIcons();
+        }
+
+        function switchDemoChannel(chId) {
+            activeDemoChannel = chId;
+            renderDemoPreview();
+        }
+
+        function handleDemoSendMessage(event) {
+            event.preventDefault();
+            const input = document.getElementById('demoChatInput');
+            const text = input.value.trim();
+            if (!text) return;
+
+            const now = new Date();
+            const timeStr = `${String(now.getHours()).padStart(2, '0')}:${String(now.getMinutes()).padStart(2, '0')}`;
+
+            demoMessages[activeDemoChannel].push({
+                user: 'Arya Wijaya',
+                badge: 'STAFF',
+                time: timeStr,
+                avatar: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=80&auto=format&fit=crop&q=80',
+                text: text,
+                reactions: ['⚡ 1']
+            });
+
+            input.value = '';
+            renderDemoPreview();
+            showLandingToast(`Pesan terkirim ke #${activeDemoChannel}`);
+        }
+
+        // ==========================================
+        // 2. CODE TABS IN ARCHITECTURE SECTION
+        // ==========================================
+        const codeSnippets = {
+            go: `package main
+
+import (
+	"context"
+	"time"
+	"github.com/devspace-id/gochat-sdk"
+)
+
+func NotifyRelease(ctx context.Context) error {
+	client := gochat.NewClient("gc_live_98f2a41c8b")
+
+	return client.Channel("general").Send(ctx, &gochat.Message{
+		Author: "Release Bot",
+		Badge:  "CI/CD",
+		Text:   "Deployment \`api-gateway v2.14.0\` selesai. Latensi P99: \`19ms\`.",
+		CodeAttachment: &gochat.CodeBlock{
+			Language: "sql",
+			Content:  "SELECT count(*) FROM active_sessions WHERE region = 'ap-southeast-3';",
+		},
+		Timestamp: time.Now(),
+	})
+}`,
+            curl: `curl -X POST https://api.gochat.dev/v2/webhooks/devspace/general \\
+  -H "Authorization: Bearer gc_live_98f2a41c8b" \\
+  -H "Content-Type: application/json" \\
+  -d '{
+    "author": "Kubernetes Alertmanager",
+    "badge": "SRE",
+    "text": "Autoscaler menambahkan 3 node worker baru di cluster ap-southeast-3.",
+    "reactions": ["🚀", "⚡"]
+  }'`,
+            ts: `import { GoChatClient } from '@gochat/sdk';
+
+const gochat = new GoChatClient({ token: process.env.GOCHAT_TOKEN });
+
+await gochat.channels.send('frontend', {
+  author: 'Vercel Bot',
+  badge: 'PREVIEW',
+  text: 'Build #842 selesai dalam 24s. Bundle size turun 12.4 KB.',
+  attachment: {
+    type: 'code',
+    lang: 'tsx',
+    code: 'export const runtime = "edge";'
+  }
+});`
+        };
+
+        function switchCodeTab(tabKey) {
+            ['go', 'curl', 'ts'].forEach(k => {
+                const btn = document.getElementById('tab_' + k);
+                if (k === tabKey) {
+                    btn.className = 'px-3 py-1 rounded text-xs font-mono font-medium bg-surface text-textMain border border-borderSubtle';
+                } else {
+                    btn.className = 'px-3 py-1 rounded text-xs font-mono font-medium text-textMuted hover:text-textMain';
+                }
+            });
+            document.getElementById('architectureCodeDisplay').textContent = codeSnippets[tabKey];
+        }
+
+        function copyLandingCode() {
+            const code = document.getElementById('architectureCodeDisplay').textContent;
+            navigator.clipboard?.writeText(code);
+            const label = document.getElementById('copyCodeBtnText');
+            label.textContent = 'Tersalin!';
+            showLandingToast('Contoh kode berhasil disalin ke clipboard');
+            setTimeout(() => { label.textContent = 'Salin'; }, 2000);
+        }
+
+        // ==========================================
+        // 3. PRICING BILLING TOGGLE
+        // ==========================================
+        function setBillingCycle(cycle) {
+            const monthlyBtn = document.getElementById('billMonthlyBtn');
+            const annualBtn = document.getElementById('billAnnualBtn');
+            const priceVal = document.getElementById('proPriceValue');
+
+            if (cycle === 'annual') {
+                annualBtn.className = 'px-3.5 py-1.5 rounded-md text-xs font-medium bg-surface text-textMain transition-colors flex items-center gap-1.5';
+                monthlyBtn.className = 'px-3.5 py-1.5 rounded-md text-xs font-medium text-textMuted hover:text-textMain transition-colors';
+                priceVal.textContent = 'Rp 63.000';
+            } else {
+                monthlyBtn.className = 'px-3.5 py-1.5 rounded-md text-xs font-medium bg-surface text-textMain transition-colors';
+                annualBtn.className = 'px-3.5 py-1.5 rounded-md text-xs font-medium text-textMuted hover:text-textMain transition-colors flex items-center gap-1.5';
+                priceVal.textContent = 'Rp 79.000';
+            }
+        }
+
+        // ==========================================
+        // 4. FAQ ACCORDION
+        // ==========================================
+        const faqs = [
+            {
+                q: 'Apa perbedaan utama GoChat dibanding Discord atau Slack?',
+                a: 'GoChat menggabungkan struktur komunitas multi-server dan voice channel instan seperti Discord dengan antarmuka minimalis, bebas bloatware, serta dukungan blok kode dan navigasi keyboard secepat Linear.'
+            },
+            {
+                q: 'Apakah GoChat mendukung instalasi Self-Hosted di server kami sendiri?',
+                a: 'Ya. Paket Enterprise menyediakan image Docker resmi dan Helm chart untuk dijalankan di cluster Kubernetes internal Anda dengan kendali penuh atas database PostgreSQL dan penyimpanan objek S3.'
+            },
+            {
+                q: 'Apakah anggota komunitas dikenakan biaya per kursi (per-seat)?',
+                a: 'Tidak. Untuk komunitas publik maupun Engineering Pro, Anda tidak dikenakan biaya per anggota pasif. Anda dapat mengundang ribuan developer ke channel #general atau #golang tanpa lonjakan tagihan.'
+            },
+            {
+                q: 'Bagaimana performa GoChat pada layar mobile dan koneksi seluler?',
+                a: 'Web app GoChat dirancang mobile-first dengan drawer navigasi responsif mulai dari layar 375px serta protokol sinkronisasi delta yang sangat hemat bandwidth.'
+            }
+        ];
+
+        function renderFaqs() {
+            const container = document.getElementById('faqContainer');
+            container.innerHTML = faqs.map((item, idx) => `
+        <div class="rounded-xl bg-bg border border-borderSubtle overflow-hidden">
+          <button onclick="toggleFaq(${idx})" class="w-full px-5 py-4 text-left flex items-center justify-between gap-4 hover:bg-surface/40 transition-colors">
+            <span class="text-sm font-semibold text-textMain">${item.q}</span>
+            <i id="faqIcon_${idx}" data-lucide="chevron-down" class="w-4 h-4 text-textMuted shrink-0 transition-transform duration-200"></i>
+          </button>
+          <div id="faqBody_${idx}" class="${idx === 0 ? '' : 'hidden'} px-5 pb-4 text-xs sm:text-sm text-textMuted leading-relaxed border-t border-borderSubtle/60 pt-3">
+            ${item.a}
+          </div>
+        </div>
+      `).join('');
+            lucide.createIcons();
+        }
+
+        function toggleFaq(idx) {
+            const body = document.getElementById('faqBody_' + idx);
+            const icon = document.getElementById('faqIcon_' + idx);
+            const isHidden = body.classList.contains('hidden');
+            if (isHidden) {
+                body.classList.remove('hidden');
+                icon.style.transform = 'rotate(180deg)';
+            } else {
+                body.classList.add('hidden');
+                icon.style.transform = 'rotate(0deg)';
+            }
+        }
+
+        // ==========================================
+        // 5. COMMAND PALETTE & MODALS
+        // ==========================================
+        const commands = [
+            { label: 'Loncat ke Live Sandbox Preview (#general)', action: () => { location.hash = '#preview'; switchDemoChannel('general'); } },
+            { label: 'Buka Channel #golang di Sandbox', action: () => { location.hash = '#preview'; switchDemoChannel('golang'); } },
+            { label: 'Lihat Fitur Engineering', action: () => { location.hash = '#features'; } },
+            { label: 'Lihat Kode Integrasi Webhook Go SDK', action: () => { location.hash = '#architecture'; switchCodeTab('go'); } },
+            { label: 'Bandingkan Paket Harga', action: () => { location.hash = '#pricing'; } },
+            { label: 'Buat Komunitas Baru Sekarang', action: () => { openAuthModal('register'); } }
+        ];
+
+        function renderCommands(filterText = '') {
+            const listEl = document.getElementById('commandList');
+            const q = filterText.toLowerCase();
+            const filtered = commands.filter(c => c.label.toLowerCase().includes(q));
+
+            listEl.innerHTML = filtered.map((cmd, idx) => `
+        <button onclick="executeCommand(${idx})" class="w-full px-3 py-2 rounded-lg hover:bg-surface text-left text-xs text-textMain flex items-center justify-between group transition-colors">
+          <div class="flex items-center gap-2.5">
+            <i data-lucide="corner-down-right" class="w-3.5 h-3.5 text-textMuted group-hover:text-accent"></i>
+            <span>${cmd.label}</span>
+          </div>
+          <span class="text-[10px] font-mono text-textMuted">Enter</span>
+        </button>
+      `).join('') || `<div class="p-4 text-center text-xs text-textMuted">Tidak ada perintah ditemukan</div>`;
+            lucide.createIcons();
+        }
+
+        function executeCommand(index) {
+            closeCommandModal();
+            if (commands[index]) commands[index].action();
+        }
+
+        function filterCommands(val) {
+            renderCommands(val);
+        }
+
+        function openCommandModal() {
+            document.getElementById('commandModal').classList.remove('hidden');
+            const input = document.getElementById('commandSearchInput');
+            input.value = '';
+            renderCommands('');
+            input.focus();
+        }
+
+        function closeCommandModal() {
+            document.getElementById('commandModal').classList.add('hidden');
+        }
+
+        function openAuthModal(mode) {
+            const title = document.getElementById('authModalTitle');
+            title.textContent = mode === 'login' ? 'Masuk ke Workspace GoChat' : 'Buat Workspace Komunitas GoChat';
+            document.getElementById('authModal').classList.remove('hidden');
+            document.getElementById('authEmailInput').focus();
+        }
+
+        function closeAuthModal() {
+            document.getElementById('authModal').classList.add('hidden');
+        }
+
+        function handleAuthSubmit(event) {
+            event.preventDefault();
+            const handle = document.getElementById('authHandleInput').value.trim();
+            closeAuthModal();
+            showLandingToast(`Selamat datang ${handle}! Sesi DevSpace siap digunakan.`);
+            location.hash = '#preview';
+        }
+
+        function toggleMobileMenu() {
+            const drawer = document.getElementById('mobileNavDrawer');
+            drawer.classList.toggle('hidden');
+        }
+
+        function showLandingToast(message) {
+            const container = document.getElementById('landingToastContainer');
+            const toast = document.createElement('div');
+            toast.className = 'pointer-events-auto flex items-center gap-2.5 px-3.5 py-2.5 rounded-lg bg-sidebar border border-borderSubtle shadow-xl text-xs font-medium text-textMain transform translate-y-2 opacity-0 transition-all duration-200';
+            toast.innerHTML = `
+        <i data-lucide="check-circle-2" class="w-4 h-4 text-online shrink-0"></i>
+        <span>${message}</span>
+      `;
+            container.appendChild(toast);
+            lucide.createIcons();
+
+            requestAnimationFrame(() => {
+                toast.classList.remove('translate-y-2', 'opacity-0');
+            });
+
+            setTimeout(() => {
+                toast.classList.add('translate-y-2', 'opacity-0');
+                setTimeout(() => toast.remove(), 200);
+            }, 2800);
+        }
+
+        // Global Keyboard Shortcut (Cmd/Ctrl + K & Escape)
+        window.addEventListener('keydown', (e) => {
+            if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === 'k') {
+                e.preventDefault();
+                openCommandModal();
+            } else if (e.key === 'Escape') {
+                closeCommandModal();
+                closeAuthModal();
+            }
+        });
+
+        // Initialize
+        window.addEventListener('DOMContentLoaded', () => {
+            renderDemoPreview();
+            renderFaqs();
+            lucide.createIcons();
+        });
+    </script>
+</body>
+
+</html>

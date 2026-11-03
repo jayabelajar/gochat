@@ -1,0 +1,1680 @@
+<!DOCTYPE html>
+<html lang="id" class="dark">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+  <title>GoChat — DevSpace Community</title>
+  <!-- Google Fonts: Inter & JetBrains Mono -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+  <!-- Tailwind CSS CDN -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <!-- Lucide Icons CDN -->
+  <script src="https://unpkg.com/lucide@latest"></script>
+  <script>
+    tailwind.config = {
+      darkMode: 'class',
+      theme: {
+        extend: {
+          fontFamily: {
+            sans: ['Inter', '-apple-system', 'BlinkMacSystemFont', 'sans-serif'],
+            mono: ['JetBrains Mono', 'monospace'],
+          },
+          colors: {
+            bg: '#111214',
+            sidebar: '#17181B',
+            chat: '#222327',
+            surface: '#2B2D31',
+            surfaceHover: '#32353B',
+            accent: '#5865F2',
+            accentHover: '#4752C4',
+            textMain: '#F2F3F5',
+            textMuted: '#949BA4',
+            borderSubtle: '#26282D',
+            online: '#23A55A',
+            idle: '#F0B232',
+            dnd: '#F23F43',
+            offline: '#80848E'
+          }
+        }
+      }
+    }
+  </script>
+  <style>
+    * {
+      box-sizing: border-box;
+      -webkit-tap-highlight-color: transparent;
+    }
+    html, body {
+      margin: 0;
+      padding: 0;
+      width: 100%;
+      height: 100%;
+      overflow: hidden;
+      background-color: #111214;
+      color: #F2F3F5;
+      font-family: 'Inter', sans-serif;
+      -webkit-font-smoothing: antialiased;
+    }
+    /* Custom Subtle Scrollbar */
+    ::-webkit-scrollbar {
+      width: 6px;
+      height: 6px;
+    }
+    ::-webkit-scrollbar-track {
+      background: transparent;
+    }
+    ::-webkit-scrollbar-thumb {
+      background: #17181B;
+      border-radius: 9999px;
+    }
+    *:hover::-webkit-scrollbar-thumb {
+      background: #2B2D31;
+    }
+    ::-webkit-scrollbar-thumb:hover {
+      background: #3F4248;
+    }
+    /* Server Pill Indicator Animation */
+    .server-pill {
+      transition: height 0.2s cubic-bezier(0.22, 1, 0.36, 1), opacity 0.2s ease, transform 0.2s ease;
+    }
+    /* Typing Bounce Dots */
+    @keyframes typingBounce {
+      0%, 80%, 100% { transform: translateY(0); opacity: 0.4; }
+      40% { transform: translateY(-3px); opacity: 1; }
+    }
+    .typing-dot:nth-child(1) { animation: typingBounce 1.2s infinite 0s; }
+    .typing-dot:nth-child(2) { animation: typingBounce 1.2s infinite 0.2s; }
+    .typing-dot:nth-child(3) { animation: typingBounce 1.2s infinite 0.4s; }
+
+    /* Code Block Styling */
+    pre code {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 12.5px;
+      line-height: 1.5;
+    }
+    textarea {
+      resize: none;
+    }
+  </style>
+</head>
+<body class="h-screen w-screen overflow-hidden select-none bg-bg text-textMain flex flex-col">
+
+  <!-- MAIN APPLICATION SHELL -->
+  <div id="app" class="relative flex flex-1 w-full h-full overflow-hidden">
+
+    <!-- MOBILE BACKDROP OVERLAY -->
+    <div id="mobileOverlay" class="fixed inset-0 bg-black/65 z-30 hidden lg:hidden transition-opacity duration-200 opacity-0" onclick="closeAllDrawers()"></div>
+
+    <!-- LEFT NAVIGATION WRAPPER (Server Sidebar + Channel Sidebar) -->
+    <div id="leftDrawer" class="fixed lg:static inset-y-0 left-0 z-40 flex h-full transform -translate-x-full lg:translate-x-0 transition-transform duration-200 ease-out shrink-0">
+      
+      <!-- 1. SERVER SIDEBAR -->
+      <nav aria-label="Servers" class="w-[72px] h-full bg-bg border-r border-borderSubtle flex flex-col items-center py-3 gap-2 shrink-0 z-20 select-none">
+        <!-- App Brand / Direct Messages Button -->
+        <div class="relative group flex items-center justify-center w-full">
+          <div class="server-pill absolute left-0 w-1 bg-textMain rounded-r-full h-0 opacity-0 group-hover:h-5 group-hover:opacity-100"></div>
+          <button onclick="showToast('Direct Messages segera hadir di GoChat v2.4', 'info')" class="w-12 h-12 rounded-[16px] bg-surface hover:bg-accent text-textMain flex items-center justify-center transition-all duration-150 group relative shadow-sm" title="GoChat Home">
+            <i data-lucide="terminal" class="w-5 h-5 text-accent group-hover:text-white transition-colors"></i>
+            <span class="absolute -bottom-0.5 -right-0.5 min-w-[18px] h-[18px] px-1 rounded-full bg-dnd text-[10px] font-bold text-white flex items-center justify-center border-2 border-bg">2</span>
+          </button>
+        </div>
+
+        <div class="w-8 h-[1px] bg-borderSubtle my-0.5"></div>
+
+        <!-- Server List Container -->
+        <div id="serverList" class="flex-1 w-full flex flex-col items-center gap-2 overflow-y-auto no-scrollbar py-0.5">
+          <!-- Rendered by JS -->
+        </div>
+
+        <div class="w-8 h-[1px] bg-borderSubtle my-0.5"></div>
+
+        <!-- Add Server Button -->
+        <button onclick="openAddServerModal()" class="w-12 h-12 rounded-[24px] hover:rounded-[16px] bg-surface hover:bg-online text-online hover:text-white flex items-center justify-center transition-all duration-150 group shrink-0" title="Tambah Komunitas">
+          <i data-lucide="plus" class="w-5 h-5"></i>
+        </button>
+
+        <!-- Notification Mute Toggle -->
+        <button onclick="toggleGlobalNotifications(this)" class="w-12 h-12 rounded-[24px] hover:rounded-[16px] bg-surface hover:bg-surfaceHover text-textMuted hover:text-textMain flex items-center justify-center transition-all duration-150 shrink-0" title="Pengaturan Notifikasi">
+          <i data-lucide="bell" class="w-5 h-5"></i>
+        </button>
+      </nav>
+
+      <!-- 2. CHANNEL SIDEBAR -->
+      <aside aria-label="Channels" class="w-60 h-full bg-sidebar border-r border-borderSubtle flex flex-col shrink-0 select-none">
+        <!-- Server Header -->
+        <header onclick="showServerMenu()" class="h-12 px-4 border-b border-borderSubtle flex items-center justify-between cursor-pointer hover:bg-surface/50 transition-colors shrink-0">
+          <div class="flex items-center gap-2 min-w-0">
+            <span id="currentServerName" class="font-semibold text-[15px] tracking-tight text-textMain truncate">DevSpace</span>
+            <span class="px-1.5 py-0.5 text-[10px] font-mono font-medium bg-accent/15 text-accent rounded border border-accent/25">PRO</span>
+          </div>
+          <i data-lucide="chevron-down" class="w-4 h-4 text-textMuted shrink-0"></i>
+        </header>
+
+        <!-- Channels Scroll Area -->
+        <div id="channelListContainer" class="flex-1 overflow-y-auto px-2 py-3 space-y-4">
+          <!-- Rendered by JS -->
+        </div>
+
+        <!-- Active Voice Status Bar (Hidden unless connected) -->
+        <div id="voiceStatusPanel" class="hidden px-3 py-2 bg-[#131417] border-t border-borderSubtle flex items-center justify-between">
+          <div class="flex items-center gap-2 min-w-0">
+            <span class="w-2 h-2 rounded-full bg-online animate-pulse shrink-0"></span>
+            <div class="truncate">
+              <div class="text-[11px] font-semibold text-online leading-tight">Voice Terhubung</div>
+              <div id="activeVoiceChannelName" class="text-[11px] text-textMuted truncate">Daily Standup</div>
+            </div>
+          </div>
+          <button onclick="leaveVoiceChannel()" class="p-1.5 rounded hover:bg-surface text-textMuted hover:text-dnd transition-colors" title="Putuskan Koneksi">
+            <i data-lucide="phone-off" class="w-4 h-4"></i>
+          </button>
+        </div>
+
+        <!-- Bottom User Profile Bar -->
+        <div class="h-[54px] px-2.5 bg-[#131417] border-t border-borderSubtle flex items-center justify-between gap-1 shrink-0 relative">
+          <button id="userProfileTrigger" onclick="toggleUserPopover(event)" class="flex items-center gap-2.5 p-1 rounded-md hover:bg-surface transition-colors min-w-0 flex-1 text-left">
+            <div class="relative shrink-0">
+              <img src="https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=100&auto=format&fit=crop&q=80" alt="Arya Wijaya" class="w-8 h-8 rounded-full object-cover bg-surface" />
+              <span id="currentUserStatusDot" class="absolute -bottom-0.5 -right-0.5 w-3 h-3 rounded-full bg-online border-2 border-[#131417]"></span>
+            </div>
+            <div class="min-w-0 flex-1">
+              <div class="text-[13px] font-semibold text-textMain leading-tight truncate">Arya Wijaya</div>
+              <div id="currentUserStatusText" class="text-[11px] text-textMuted leading-tight truncate">@aryawijaya</div>
+            </div>
+          </button>
+
+          <div class="flex items-center gap-0.5 shrink-0">
+            <button id="micToggleBtn" onclick="toggleMic()" class="p-1.5 rounded-md hover:bg-surface text-textMuted hover:text-textMain transition-colors" title="Mute Mikrofon">
+              <i data-lucide="mic" class="w-4 h-4"></i>
+            </button>
+            <button id="deafenToggleBtn" onclick="toggleDeafen()" class="p-1.5 rounded-md hover:bg-surface text-textMuted hover:text-textMain transition-colors" title="Matikan Audio">
+              <i data-lucide="headphones" class="w-4 h-4"></i>
+            </button>
+            <button onclick="toggleUserPopover(event)" class="p-1.5 rounded-md hover:bg-surface text-textMuted hover:text-textMain transition-colors" title="Pengaturan Profil">
+              <i data-lucide="settings" class="w-4 h-4"></i>
+            </button>
+          </div>
+        </div>
+      </aside>
+    </div>
+
+    <!-- 3. MAIN CHAT AREA -->
+    <main class="flex-1 h-full bg-chat flex flex-col min-w-0 relative z-10">
+      
+      <!-- Channel Header -->
+      <header class="h-12 px-3 sm:px-4 border-b border-borderSubtle bg-chat flex items-center justify-between gap-2 shrink-0">
+        <!-- Left Info -->
+        <div class="flex items-center gap-2 min-w-0 flex-1">
+          <!-- Mobile Menu Button -->
+          <button onclick="openLeftDrawer()" class="lg:hidden p-1.5 -ml-1 rounded-md hover:bg-surface text-textMuted hover:text-textMain transition-colors shrink-0" aria-label="Buka Menu Navigasi">
+            <i data-lucide="menu" class="w-5 h-5"></i>
+          </button>
+
+          <div class="flex items-center gap-1.5 min-w-0">
+            <i data-lucide="hash" class="w-5 h-5 text-textMuted shrink-0"></i>
+            <h1 id="activeChannelTitle" class="font-semibold text-[15px] text-textMain tracking-tight truncate">general</h1>
+          </div>
+
+          <span class="hidden md:inline-block w-[1px] h-4 bg-borderSubtle mx-2 shrink-0"></span>
+          <p id="activeChannelTopic" class="hidden md:block text-xs text-textMuted truncate">
+            Diskusi arsitektur sistem, engineering culture, dan rilis harian DevSpace.
+          </p>
+        </div>
+
+        <!-- Right Controls -->
+        <div class="flex items-center gap-1 sm:gap-2 shrink-0">
+          <!-- Search Input -->
+          <div class="relative flex items-center">
+            <input 
+              id="searchInput" 
+              type="text" 
+              placeholder="Cari pesan..." 
+              oninput="handleSearchMessages(this.value)"
+              class="w-32 sm:w-44 md:w-56 focus:w-48 sm:focus:w-64 h-7 pl-2.5 pr-7 rounded-md bg-bg border border-borderSubtle focus:border-accent text-xs text-textMain placeholder-textMuted outline-none transition-all duration-150 select-text"
+            />
+            <button id="clearSearchBtn" onclick="clearSearch()" class="hidden absolute right-2 text-textMuted hover:text-textMain">
+              <i data-lucide="x" class="w-3.5 h-3.5"></i>
+            </button>
+            <i id="searchIcon" data-lucide="search" class="w-3.5 h-3.5 text-textMuted absolute right-2.5 pointer-events-none"></i>
+          </div>
+
+          <!-- Simulate Incoming Message Button -->
+          <button onclick="simulateIncomingMessage()" class="hidden sm:flex items-center gap-1.5 h-7 px-2.5 rounded-md bg-surface hover:bg-surfaceHover border border-borderSubtle text-xs font-medium text-textMuted hover:text-textMain transition-colors" title="Simulasikan balasan real-time">
+            <i data-lucide="sparkles" class="w-3.5 h-3.5 text-accent"></i>
+            <span>Simulasi Chat</span>
+          </button>
+
+          <!-- Pinned Messages Toast Trigger -->
+          <button onclick="showPinnedToast()" class="p-1.5 rounded-md hover:bg-surface text-textMuted hover:text-textMain transition-colors" title="Pesan Disematkan">
+            <i data-lucide="pin" class="w-4 h-4"></i>
+          </button>
+
+          <!-- Toggle Member Sidebar Button -->
+          <button id="memberToggleBtn" onclick="toggleMemberSidebar()" class="p-1.5 rounded-md bg-surface text-textMain hover:bg-surfaceHover transition-colors" title="Tampilkan/Sembunyikan Daftar Anggota">
+            <i data-lucide="users" class="w-4 h-4"></i>
+          </button>
+        </div>
+      </header>
+
+      <!-- Search Filter Banner (Conditional) -->
+      <div id="searchBanner" class="hidden px-4 py-1.5 bg-surface/90 border-b border-borderSubtle flex items-center justify-between text-xs">
+        <div class="flex items-center gap-2 text-textMuted">
+          <i data-lucide="filter" class="w-3.5 h-3.5 text-accent"></i>
+          <span>Menampilkan hasil pencarian untuk <strong id="searchQueryLabel" class="text-textMain font-medium"></strong></span>
+        </div>
+        <button onclick="clearSearch()" class="text-accent hover:underline font-medium">Reset filter</button>
+      </div>
+
+      <!-- Messages Timeline Scroll Container -->
+      <div id="messageTimeline" class="flex-1 overflow-y-auto px-3 sm:px-5 py-4 space-y-1 select-text">
+        <!-- Rendered by JS -->
+      </div>
+
+      <!-- Typing Indicator Row -->
+      <div class="h-6 px-4 sm:px-5 flex items-center shrink-0">
+        <div id="typingIndicator" class="hidden items-center gap-2 text-xs text-textMuted">
+          <div class="flex items-center gap-0.5 bg-surface px-2 py-1 rounded-full">
+            <span class="w-1.5 h-1.5 rounded-full bg-textMuted typing-dot"></span>
+            <span class="w-1.5 h-1.5 rounded-full bg-textMuted typing-dot"></span>
+            <span class="w-1.5 h-1.5 rounded-full bg-textMuted typing-dot"></span>
+          </div>
+          <span><strong id="typingUserText" class="text-textMain font-medium">Budi Santoso</strong> sedang mengetik...</span>
+        </div>
+      </div>
+
+      <!-- Message Composer Area -->
+      <div class="px-3 sm:px-4 pb-3.5 pt-0.5 shrink-0">
+        <!-- Attachment Preview Strip -->
+        <div id="attachmentPreviewContainer" class="hidden mb-2 p-2.5 rounded-t-lg bg-surface border border-b-0 border-borderSubtle flex items-center justify-between">
+          <div class="flex items-center gap-2.5 min-w-0">
+            <div class="w-8 h-8 rounded bg-accent/15 border border-accent/30 flex items-center justify-center text-accent shrink-0">
+              <i data-lucide="file-code" class="w-4 h-4"></i>
+            </div>
+            <div class="min-w-0">
+              <div id="attachedFileName" class="text-xs font-medium text-textMain truncate">worker_pool_benchmark.go</div>
+              <div class="text-[11px] text-textMuted">4.8 KB • Siap dikirim</div>
+            </div>
+          </div>
+          <button onclick="removePendingAttachment()" class="p-1 rounded hover:bg-chat text-textMuted hover:text-dnd transition-colors">
+            <i data-lucide="trash-2" class="w-4 h-4"></i>
+          </button>
+        </div>
+
+        <!-- Composer Box -->
+        <div class="bg-surface rounded-lg border border-borderSubtle focus-within:border-accent/70 transition-colors flex items-end px-3 py-2 gap-2">
+          <!-- Attach Mock Snippet Button -->
+          <button onclick="attachSampleSnippet()" class="p-1.5 rounded-md hover:bg-surfaceHover text-textMuted hover:text-textMain transition-colors shrink-0 mb-0.5" title="Lampirkan Snippet Kode / File">
+            <i data-lucide="plus-circle" class="w-5 h-5"></i>
+          </button>
+
+          <!-- Multi-line Auto-expanding Textarea -->
+          <textarea 
+            id="messageInput" 
+            rows="1"
+            placeholder="Kirim pesan ke #general"
+            onkeydown="handleComposerKeydown(event)"
+            oninput="handleComposerInput(this)"
+            class="flex-1 bg-transparent text-sm text-textMain placeholder-textMuted outline-none max-h-36 py-1 leading-relaxed select-text overflow-y-auto"
+          ></textarea>
+
+          <!-- Quick Emoji Insert -->
+          <div class="flex items-center gap-1 shrink-0 mb-0.5">
+            <button onclick="insertQuickEmoji('🚀')" class="hidden sm:flex p-1.5 rounded-md hover:bg-surfaceHover text-textMuted hover:text-textMain transition-colors text-sm" title="Sisipkan 🚀">
+              🚀
+            </button>
+            <button onclick="insertQuickEmoji('🔥')" class="hidden sm:flex p-1.5 rounded-md hover:bg-surfaceHover text-textMuted hover:text-textMain transition-colors text-sm" title="Sisipkan 🔥">
+              🔥
+            </button>
+            <button id="sendMessageBtn" onclick="sendMessage()" class="h-8 px-3 rounded-md bg-accent hover:bg-accentHover text-white font-medium text-xs flex items-center gap-1.5 transition-colors shadow-sm">
+              <span>Kirim</span>
+              <i data-lucide="send-horizontal" class="w-3.5 h-3.5"></i>
+            </button>
+          </div>
+        </div>
+
+        <!-- Helper Keyboard Hints -->
+        <div class="hidden sm:flex items-center justify-between mt-1.5 px-1 text-[11px] text-textMuted">
+          <div>
+            Tekan <kbd class="px-1 py-0.5 bg-sidebar border border-borderSubtle rounded font-mono text-[10px] text-textMain">Enter</kbd> untuk kirim, <kbd class="px-1 py-0.5 bg-sidebar border border-borderSubtle rounded font-mono text-[10px] text-textMain">Shift + Enter</kbd> untuk baris baru
+          </div>
+          <span>Markdown & `inline code` didukung</span>
+        </div>
+      </div>
+
+    </main>
+
+    <!-- 4. MEMBER SIDEBAR -->
+    <aside id="memberSidebar" aria-label="Members" class="fixed xl:static inset-y-0 right-0 z-40 w-60 h-full bg-sidebar border-l border-borderSubtle flex flex-col shrink-0 transform translate-x-full xl:translate-x-0 transition-transform duration-200 ease-out select-none">
+      <!-- Member Header (Visible on Mobile/Tablet Drawer) -->
+      <div class="h-12 px-4 border-b border-borderSubtle flex items-center justify-between xl:hidden shrink-0">
+        <span class="text-xs font-semibold uppercase tracking-wider text-textMuted">Anggota Komunitas</span>
+        <button onclick="closeAllDrawers()" class="p-1 rounded hover:bg-surface text-textMuted hover:text-textMain">
+          <i data-lucide="x" class="w-4 h-4"></i>
+        </button>
+      </div>
+
+      <!-- Member List Scroll Container -->
+      <div id="memberListContainer" class="flex-1 overflow-y-auto px-3 py-3 space-y-5">
+        <!-- Rendered by JS -->
+      </div>
+    </aside>
+
+  </div>
+
+  <!-- USER PROFILE POPOVER -->
+  <div id="userPopover" class="hidden fixed bottom-16 left-4 sm:left-20 z-50 w-72 rounded-xl bg-bg border border-borderSubtle shadow-2xl overflow-hidden select-none">
+    <!-- Banner -->
+    <div class="h-14 bg-[#1E212B] border-b border-borderSubtle relative">
+      <span class="absolute top-2.5 right-3 px-2 py-0.5 rounded text-[10px] font-mono bg-surface text-textMuted border border-borderSubtle">STAFF ENGINEER</span>
+    </div>
+    <!-- Profile Body -->
+    <div class="px-4 pb-4 pt-8 relative">
+      <div class="absolute -top-7 left-4">
+        <div class="relative">
+          <img src="https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=120&auto=format&fit=crop&q=80" alt="Arya Wijaya" class="w-14 h-14 rounded-full object-cover border-4 border-bg bg-surface" />
+          <span id="popoverStatusDot" class="absolute bottom-0.5 right-0.5 w-3.5 h-3.5 rounded-full bg-online border-2 border-bg"></span>
+        </div>
+      </div>
+
+      <div class="mb-3">
+        <div class="font-bold text-base text-textMain">Arya Wijaya</div>
+        <div class="text-xs text-textMuted font-mono">@aryawijaya • Go / Rust / TS</div>
+      </div>
+
+      <div class="p-2.5 rounded-lg bg-sidebar border border-borderSubtle space-y-2 mb-3">
+        <div class="text-[11px] font-semibold uppercase tracking-wider text-textMuted">Ubah Status Kehadiran</div>
+        <div class="grid grid-cols-2 gap-1.5">
+          <button onclick="setUserPresence('online', 'Online')" class="flex items-center gap-2 px-2 py-1.5 rounded bg-surface/60 hover:bg-surface text-xs text-textMain transition-colors">
+            <span class="w-2.5 h-2.5 rounded-full bg-online"></span>
+            <span>Online</span>
+          </button>
+          <button onclick="setUserPresence('idle', 'Idle')" class="flex items-center gap-2 px-2 py-1.5 rounded bg-surface/60 hover:bg-surface text-xs text-textMain transition-colors">
+            <span class="w-2.5 h-2.5 rounded-full bg-idle"></span>
+            <span>Idle</span>
+          </button>
+          <button onclick="setUserPresence('dnd', 'Fokus Coding')" class="flex items-center gap-2 px-2 py-1.5 rounded bg-surface/60 hover:bg-surface text-xs text-textMain transition-colors">
+            <span class="w-2.5 h-2.5 rounded-full bg-dnd"></span>
+            <span>Do Not Disturb</span>
+          </button>
+          <button onclick="setUserPresence('offline', 'Invisible')" class="flex items-center gap-2 px-2 py-1.5 rounded bg-surface/60 hover:bg-surface text-xs text-textMain transition-colors">
+            <span class="w-2.5 h-2.5 rounded-full bg-offline"></span>
+            <span>Invisible</span>
+          </button>
+        </div>
+      </div>
+
+      <button onclick="copyProfileTag()" class="w-full py-1.5 px-3 rounded-md bg-surface hover:bg-surfaceHover text-xs font-medium text-textMain flex items-center justify-center gap-2 transition-colors border border-borderSubtle">
+        <i data-lucide="copy" class="w-3.5 h-3.5 text-textMuted"></i>
+        <span>Salin ID Pengguna</span>
+      </button>
+    </div>
+  </div>
+
+  <!-- ADD SERVER MODAL -->
+  <div id="addServerModal" class="hidden fixed inset-0 z-50 bg-black/70 flex items-center justify-center p-4">
+    <div class="w-full max-w-md rounded-xl bg-sidebar border border-borderSubtle shadow-2xl overflow-hidden">
+      <div class="px-5 py-4 border-b border-borderSubtle flex items-center justify-between">
+        <h2 class="text-base font-semibold text-textMain">Buat Workspace Komunitas</h2>
+        <button onclick="closeAddServerModal()" class="p-1 rounded hover:bg-surface text-textMuted hover:text-textMain">
+          <i data-lucide="x" class="w-4 h-4"></i>
+        </button>
+      </div>
+      <form onsubmit="handleCreateServer(event)" class="p-5 space-y-4">
+        <div>
+          <label class="block text-xs font-semibold uppercase tracking-wider text-textMuted mb-1.5">Nama Server</label>
+          <input id="newServerNameInput" type="text" required maxlength="28" placeholder="contoh: Kubernetes ID" class="w-full h-9 px-3 rounded-md bg-bg border border-borderSubtle focus:border-accent text-sm text-textMain outline-none" />
+        </div>
+        <div>
+          <label class="block text-xs font-semibold uppercase tracking-wider text-textMuted mb-1.5">Inisial Ikon (2 Karakter)</label>
+          <input id="newServerShortInput" type="text" maxlength="2" placeholder="K8" class="w-24 h-9 px-3 rounded-md bg-bg border border-borderSubtle focus:border-accent text-sm font-mono uppercase text-textMain outline-none" />
+        </div>
+        <div class="pt-2 flex items-center justify-end gap-2">
+          <button type="button" onclick="closeAddServerModal()" class="h-8 px-3 rounded-md bg-surface hover:bg-surfaceHover text-xs font-medium text-textMuted hover:text-textMain transition-colors">Batal</button>
+          <button type="submit" class="h-8 px-4 rounded-md bg-accent hover:bg-accentHover text-xs font-medium text-white transition-colors">Buat Komunitas</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- TOAST NOTIFICATION CONTAINER -->
+  <div id="toastContainer" class="fixed bottom-4 right-4 z-50 flex flex-col gap-2 max-w-xs w-full pointer-events-none"></div>
+
+  <!-- APPLICATION SCRIPT -->
+  <script>
+    // ==========================================
+    // 1. STATE & REALISTIC MOCK DATA
+    // ==========================================
+    const EMOJI_PALETTE = ['🔥', '🚀', '👍', '❤️', '⚡', '💯'];
+
+    const state = {
+      activeServerId: 'devspace',
+      activeChannelId: 'general',
+      activeVoiceChannelId: null,
+      searchQuery: '',
+      collapsedCategories: {},
+      memberSidebarOpenDesktop: true,
+      leftDrawerOpenMobile: false,
+      rightDrawerOpenMobile: false,
+      micMuted: false,
+      deafened: false,
+      notificationsMuted: false,
+      pendingAttachment: null,
+      currentUser: {
+        id: 'u_arya',
+        name: 'Arya Wijaya',
+        handle: '@aryawijaya',
+        role: 'Core Maintainer',
+        status: 'online',
+        avatar: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=100&auto=format&fit=crop&q=80'
+      },
+      servers: [
+        {
+          id: 'devspace',
+          name: 'DevSpace',
+          short: 'DS',
+          unread: 0,
+          categories: [
+            {
+              id: 'cat_text',
+              name: 'TEXT CHANNELS',
+              channels: [
+                { id: 'general', name: 'general', type: 'text', unread: false, topic: 'Diskusi arsitektur sistem, engineering culture, dan rilis harian DevSpace.' },
+                { id: 'frontend', name: 'frontend', type: 'text', unread: true, topic: 'React 19, Next.js App Router, CSS Architecture, Web Performance & Design Systems.' },
+                { id: 'backend', name: 'backend', type: 'text', unread: false, topic: 'PostgreSQL tuning, Distributed Systems, gRPC, Redis caching & Microservices.' },
+                { id: 'golang', name: 'golang', type: 'text', unread: true, topic: 'Goroutines, runtime scheduler, PGO, memory profiling, dan Go 1.24+.' },
+                { id: 'random', name: 'random', type: 'text', unread: false, topic: 'Mechanical keyboards, setup meja kerja, kopi pagi, dan obrolan santai.' }
+              ]
+            },
+            {
+              id: 'cat_voice',
+              name: 'VOICE CHANNELS',
+              channels: [
+                { id: 'v_standup', name: 'Daily Standup', type: 'voice', participants: ['Rizky Pratama', 'Nadia Putri'] },
+                { id: 'v_pair', name: 'Pair Programming #1', type: 'voice', participants: ['Budi Santoso'] },
+                { id: 'v_lofi', name: 'Lo-Fi Focus Room', type: 'voice', participants: [] }
+              ]
+            }
+          ]
+        },
+        {
+          id: 'gophers_id',
+          name: 'Gophers Indonesia',
+          short: 'GO',
+          unread: 4,
+          categories: [
+            {
+              id: 'cat_go_main',
+              name: 'CORE CHANNELS',
+              channels: [
+                { id: 'general', name: 'general', type: 'text', unread: false, topic: 'Komunitas pengguna bahasa pemrograman Go seluruh Indonesia.' },
+                { id: 'golang', name: 'golang', type: 'text', unread: false, topic: 'Bedah source code standard library, concurrency patterns & benchmark.' },
+                { id: 'backend', name: 'backend', type: 'text', unread: false, topic: 'Cloud-native deployment, Docker, Kubernetes & observability.' }
+              ]
+            },
+            {
+              id: 'cat_go_voice',
+              name: 'VOICE LOUNGE',
+              channels: [
+                { id: 'v_talk', name: 'Go Meetup Prep', type: 'voice', participants: ['Dimas Anggara'] }
+              ]
+            }
+          ]
+        },
+        {
+          id: 'cloud_native',
+          name: 'Cloud Native Lab',
+          short: 'CN',
+          unread: 1,
+          categories: [
+            {
+              id: 'cat_cn_text',
+              name: 'INFRASTRUCTURE',
+              channels: [
+                { id: 'general', name: 'general', type: 'text', unread: false, topic: 'Diskusi Kubernetes, Cilium eBPF, Terraform, dan SRE practices.' },
+                { id: 'backend', name: 'backend', type: 'text', unread: false, topic: 'High-availability clusters, Prometheus metrics & OpenTelemetry.' }
+              ]
+            }
+          ]
+        }
+      ],
+      members: [
+        { id: 'u_arya', name: 'Arya Wijaya', role: 'CORE MAINTAINERS', roleColor: '#8B95F6', status: 'online', activity: 'Neovim — worker_pool.go', avatar: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=100&auto=format&fit=crop&q=80', badge: 'STAFF' },
+        { id: 'u_rizky', name: 'Rizky Pratama', role: 'CORE MAINTAINERS', roleColor: '#8B95F6', status: 'online', activity: 'Reviewing PR #412', avatar: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=100&auto=format&fit=crop&q=80', badge: 'MOD' },
+        { id: 'u_nadia', name: 'Nadia Putri', role: 'SENIOR ENGINEERS', roleColor: '#3BA55D', status: 'online', activity: 'Figma — Design Tokens v3', avatar: 'https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=100&auto=format&fit=crop&q=80', badge: 'FE' },
+        { id: 'u_budi', name: 'Budi Santoso', role: 'SENIOR ENGINEERS', roleColor: '#3BA55D', status: 'dnd', activity: 'Load testing gRPC cluster', avatar: 'https://images.unsplash.com/photo-1500648767791-00dcc994a43e?w=100&auto=format&fit=crop&q=80', badge: 'GO' },
+        { id: 'u_dimas', name: 'Dimas Anggara', role: 'SENIOR ENGINEERS', roleColor: '#3BA55D', status: 'idle', activity: 'AFK — Coffee break', avatar: 'https://images.unsplash.com/photo-1519085360753-af0119f7cbe7?w=100&auto=format&fit=crop&q=80', badge: 'SRE' },
+        { id: 'u_siti', name: 'Siti Aminah', role: 'COMMUNITY MEMBERS', roleColor: '#949BA4', status: 'online', activity: 'Debugging PostgreSQL locks', avatar: 'https://images.unsplash.com/photo-1438761681033-6461ffad8d80?w=100&auto=format&fit=crop&q=80', badge: 'DB' },
+        { id: 'u_kevin', name: 'Kevin Gunawan', role: 'COMMUNITY MEMBERS', roleColor: '#949BA4', status: 'offline', activity: 'Terakhir dilihat 2 jam lalu', avatar: 'https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=100&auto=format&fit=crop&q=80', badge: '' },
+        { id: 'u_clara', name: 'Clara Wijaya', role: 'COMMUNITY MEMBERS', roleColor: '#949BA4', status: 'offline', activity: 'Terakhir dilihat kemarin', avatar: 'https://images.unsplash.com/photo-1544005313-94ddf0286df2?w=100&auto=format&fit=crop&q=80', badge: '' }
+      ],
+      messages: {
+        general: [
+          {
+            id: 'm_gen_1',
+            userId: 'u_rizky',
+            userName: 'Rizky Pratama',
+            roleBadge: 'CORE',
+            avatar: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=100&auto=format&fit=crop&q=80',
+            timestamp: 'Hari ini pukul 09:14',
+            text: 'Pagi tim! Deployment `api-gateway v2.14.0` ke cluster production Jakarta sudah selesai tanpa downtime. Latensi P99 turun dari `48ms` ke `19ms` setelah kita migrasi serializer JSON.',
+            reactions: [
+              { emoji: '🚀', count: 6, reacted: true },
+              { emoji: '🔥', count: 4, reacted: false }
+            ]
+          },
+          {
+            id: 'm_gen_2',
+            userId: 'u_nadia',
+            userName: 'Nadia Putri',
+            roleBadge: 'FE LEAD',
+            avatar: 'https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=100&auto=format&fit=crop&q=80',
+            timestamp: 'Hari ini pukul 09:18',
+            text: 'Mantap banget @Rizky Pratama! Di sisi dashboard observabilitas juga kerasa jauh lebih responsif waktu nge-load time-series log.',
+            reactions: [
+              { emoji: '👍', count: 3, reacted: false }
+            ]
+          },
+          {
+            id: 'm_gen_3',
+            userId: 'u_budi',
+            userName: 'Budi Santoso',
+            roleBadge: 'STAFF',
+            avatar: 'https://images.unsplash.com/photo-1500648767791-00dcc994a43e?w=100&auto=format&fit=crop&q=80',
+            timestamp: 'Hari ini pukul 09:25',
+            text: 'Catatan rilis dan hasil load testing k6 sudah aku lampirkan di bawah. Nanti jam 14:00 WIB kita bahas singkat di channel voice **Daily Standup** ya.',
+            attachment: {
+              type: 'file',
+              name: 'release_v2.14.0_benchmark.pdf',
+              size: '1.2 MB'
+            },
+            reactions: [
+              { emoji: '⚡', count: 5, reacted: true }
+            ]
+          },
+          {
+            id: 'm_gen_4',
+            userId: 'u_siti',
+            userName: 'Siti Aminah',
+            roleBadge: 'DBA',
+            avatar: 'https://images.unsplash.com/photo-1438761681033-6461ffad8d80?w=100&auto=format&fit=crop&q=80',
+            timestamp: 'Hari ini pukul 09:31',
+            text: 'Connection pool di PgBouncer juga stabil di angka 35% utilisasi. Siap menghadapi peak traffic jam makan siang nanti.',
+            reactions: [
+              { emoji: '💯', count: 4, reacted: false }
+            ]
+          }
+        ],
+        frontend: [
+          {
+            id: 'm_fe_1',
+            userId: 'u_nadia',
+            userName: 'Nadia Putri',
+            roleBadge: 'FE LEAD',
+            avatar: 'https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=100&auto=format&fit=crop&q=80',
+            timestamp: 'Hari ini pukul 10:05',
+            text: 'Teman-teman frontend, untuk komponen tabel virtualized yang menangani 50.000 baris log real-time, kita sepakat pakai `@tanstack/react-virtual` tanpa wrapper tambahan supaya bundle tetap ramping.',
+            attachment: {
+              type: 'code',
+              lang: 'tsx',
+              code: `const rowVirtualizer = useVirtualizer({\n  count: logs.length,\n  getScrollElement: () => parentRef.current,\n  estimateSize: () => 36,\n  overscan: 8,\n});`
+            },
+            reactions: [
+              { emoji: '🔥', count: 5, reacted: true },
+              { emoji: '👍', count: 2, reacted: false }
+            ]
+          },
+          {
+            id: 'm_fe_2',
+            userId: 'u_arya',
+            userName: 'Arya Wijaya',
+            roleBadge: 'STAFF',
+            avatar: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=100&auto=format&fit=crop&q=80',
+            timestamp: 'Hari ini pukul 10:12',
+            text: 'Setuju. Pastikan kita hindari layout shift waktu baris log memiliki multiline stacktrace dengan `measureElement` dinamis.',
+            reactions: [
+              { emoji: '💯', count: 3, reacted: false }
+            ]
+          },
+          {
+            id: 'm_fe_3',
+            userId: 'u_rizky',
+            userName: 'Rizky Pratama',
+            roleBadge: 'CORE',
+            avatar: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=100&auto=format&fit=crop&q=80',
+            timestamp: 'Hari ini pukul 10:19',
+            text: 'Jangan lupa token warna surface `#2B2D31` dan border `#26282D` disamakan dengan spesifikasi Linear/Discord dark theme kita biar kontras tetap nyaman di mata.',
+            reactions: [
+              { emoji: '❤️', count: 4, reacted: true }
+            ]
+          }
+        ],
+        backend: [
+          {
+            id: 'm_be_1',
+            userId: 'u_siti',
+            userName: 'Siti Aminah',
+            roleBadge: 'DBA',
+            avatar: 'https://images.unsplash.com/photo-1438761681033-6461ffad8d80?w=100&auto=format&fit=crop&q=80',
+            timestamp: 'Hari ini pukul 11:02',
+            text: 'Ada yang pernah nemu bottleneck waktu jalankan query agregasi `events` di tabel partisi bulanan? Setelah kita tambah partial composite index, execution time turun drastis dari `1.4s` jadi `6.2ms`.',
+            attachment: {
+              type: 'code',
+              lang: 'sql',
+              code: `CREATE INDEX CONCURRENTLY idx_events_org_created_unread\nON events (organization_id, created_at DESC)\nWHERE is_archived = FALSE;`
+            },
+            reactions: [
+              { emoji: '⚡', count: 7, reacted: true },
+              { emoji: '🔥', count: 3, reacted: true }
+            ]
+          },
+          {
+            id: 'm_be_2',
+            userId: 'u_dimas',
+            userName: 'Dimas Anggara',
+            roleBadge: 'SRE',
+            avatar: 'https://images.unsplash.com/photo-1519085360753-af0119f7cbe7?w=100&auto=format&fit=crop&q=80',
+            timestamp: 'Hari ini pukul 11:10',
+            text: 'Partial index memang penyelamat! Ukuran index di disk juga cuma 18% dibanding full index karena 80% data lama sudah `is_archived = TRUE`.',
+            reactions: [
+              { emoji: '👍', count: 4, reacted: false }
+            ]
+          }
+        ],
+        golang: [
+          {
+            id: 'm_go_1',
+            userId: 'u_budi',
+            userName: 'Budi Santoso',
+            roleBadge: 'STAFF',
+            avatar: 'https://images.unsplash.com/photo-1500648767791-00dcc994a43e?w=100&auto=format&fit=crop&q=80',
+            timestamp: 'Hari ini pukul 13:15',
+            text: 'Share pattern worker pool dengan graceful shutdown berbasis `errgroup` dan `context.WithCancel` yang kita pakai di ingestion worker Go 1.24:',
+            attachment: {
+              type: 'code',
+              lang: 'go',
+              code: `func RunPool(ctx context.Context, jobs <-chan Job, workers int) error {\n\tg, ctx := errgroup.WithContext(ctx)\n\tfor i := 0; i < workers; i++ {\n\t\tg.Go(func() error {\n\t\t\tfor {\n\t\t\t\tselect {\n\t\t\t\tcase <-ctx.Done():\n\t\t\t\t\treturn ctx.Err()\n\t\t\t\tcase job, ok := <-jobs:\n\t\t\t\t\tif !ok {\n\t\t\t\t\t\treturn nil\n\t\t\t\t\t}\n\t\t\t\t\tif err := job.Process(ctx); err != nil {\n\t\t\t\t\t\treturn err\n\t\t\t\t\t}\n\t\t\t\t}\n\t\t\t}\n\t\t})\n\t}\n\treturn g.Wait()\n}`
+            },
+            reactions: [
+              { emoji: '🚀', count: 8, reacted: true },
+              { emoji: '💯', count: 5, reacted: false }
+            ]
+          },
+          {
+            id: 'm_go_2',
+            userId: 'u_arya',
+            userName: 'Arya Wijaya',
+            roleBadge: 'STAFF',
+            avatar: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=100&auto=format&fit=crop&q=80',
+            timestamp: 'Hari ini pukul 13:22',
+            text: 'Clean banget. Ditambah `sync.Pool` buat buffer byte payload kemarin bikin GC pause hampir rata di bawah `200µs`.',
+            reactions: [
+              { emoji: '🔥', count: 4, reacted: true }
+            ]
+          }
+        ],
+        random: [
+          {
+            id: 'm_rnd_1',
+            userId: 'u_dimas',
+            userName: 'Dimas Anggara',
+            roleBadge: 'SRE',
+            avatar: 'https://images.unsplash.com/photo-1519085360753-af0119f7cbe7?w=100&auto=format&fit=crop&q=80',
+            timestamp: 'Hari ini pukul 15:40',
+            text: 'Akhirnya selesai rakit custom split mechanical keyboard 42-key pakai switch tactile + keycaps PBT dark grey. Jari kelingking langsung berterima kasih waktu ngetik vim macros seharian.',
+            reactions: [
+              { emoji: '🔥', count: 6, reacted: true },
+              { emoji: '❤️', count: 3, reacted: false }
+            ]
+          },
+          {
+            id: 'm_rnd_2',
+            userId: 'u_nadia',
+            userName: 'Nadia Putri',
+            roleBadge: 'FE LEAD',
+            avatar: 'https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=100&auto=format&fit=crop&q=80',
+            timestamp: 'Hari ini pukul 15:46',
+            text: 'Berapa lama adaptasi layout 42-key buat ngetik simbol kurung kurawal `{}` dan `[]`? Aku masih setia di 65% layout nih.',
+            reactions: [
+              { emoji: '👍', count: 2, reacted: false }
+            ]
+          }
+        ]
+      }
+    };
+
+    // ==========================================
+    // 2. HELPER UTILITIES
+    // ==========================================
+    function getCurrentServer() {
+      return state.servers.find(s => s.id === state.activeServerId) || state.servers[0];
+    }
+
+    function getCurrentChannelObj() {
+      const server = getCurrentServer();
+      for (const cat of server.categories) {
+        const found = cat.channels.find(c => c.id === state.activeChannelId);
+        if (found) return found;
+      }
+      return server.categories[0].channels[0];
+    }
+
+    function escapeHtml(unsafe) {
+      return unsafe
+        .replace(/&/g, "&amp;")
+        .replace(/</g, "&lt;")
+        .replace(/>/g, "&gt;")
+        .replace(/"/g, "&quot;")
+        .replace(/'/g, "&#039;");
+    }
+
+    function formatMessageContent(rawText) {
+      let safe = escapeHtml(rawText);
+      // Format `inline code`
+      safe = safe.replace(/`([^`]+)`/g, '<code class="px-1.5 py-0.5 rounded bg-bg border border-borderSubtle font-mono text-[12px] text-[#E5C07B]">$1</code>');
+      // Format **bold**
+      safe = safe.replace(/\*\*([^*]+)\*\*/g, '<strong class="font-semibold text-white">$1</strong>');
+      // Format @mentions
+      safe = safe.replace(/(@[A-Za-z0-9_]+(?:\s[A-Za-z0-9_]+)?)/g, '<span class="px-1 py-0.5 rounded bg-accent/20 text-[#99A2FF] font-medium cursor-pointer hover:bg-accent/30 transition-colors">$1</span>');
+      // Preserve newlines
+      return safe.replace(/\n/g, '<br/>');
+    }
+
+    function getStatusColorClass(status) {
+      switch (status) {
+        case 'online': return 'bg-online';
+        case 'idle': return 'bg-idle';
+        case 'dnd': return 'bg-dnd';
+        default: return 'bg-offline';
+      }
+    }
+
+    // ==========================================
+    // 3. RENDER FUNCTIONS
+    // ==========================================
+    function renderServers() {
+      const container = document.getElementById('serverList');
+      container.innerHTML = state.servers.map(server => {
+        const isActive = server.id === state.activeServerId;
+        const pillClass = isActive
+          ? 'h-9 opacity-100'
+          : 'h-0 opacity-0 group-hover:h-5 group-hover:opacity-100';
+        const btnClass = isActive
+          ? 'rounded-[16px] bg-accent text-white shadow-md'
+          : 'rounded-[24px] hover:rounded-[16px] bg-surface hover:bg-accent text-textMain hover:text-white';
+
+        return `
+          <div class="relative group flex items-center justify-center w-full">
+            <div class="server-pill absolute left-0 w-1 bg-textMain rounded-r-full ${pillClass}"></div>
+            <button
+              onclick="switchServer('${server.id}')"
+              class="w-12 h-12 font-semibold text-xs tracking-wider flex items-center justify-center transition-all duration-150 relative ${btnClass}"
+              title="${escapeHtml(server.name)}"
+            >
+              <span>${escapeHtml(server.short)}</span>
+              ${server.unread > 0 && !isActive ? `
+                <span class="absolute -bottom-0.5 -right-0.5 min-w-[18px] h-[18px] px-1 rounded-full bg-dnd text-[10px] font-bold text-white flex items-center justify-center border-2 border-bg">
+                  ${server.unread}
+                </span>
+              ` : ''}
+            </button>
+          </div>
+        `;
+      }).join('');
+    }
+
+    function renderChannels() {
+      const server = getCurrentServer();
+      document.getElementById('currentServerName').textContent = server.name;
+
+      const container = document.getElementById('channelListContainer');
+      container.innerHTML = server.categories.map(cat => {
+        const isCollapsed = !!state.collapsedCategories[cat.id];
+        return `
+          <div class="select-none">
+            <button
+              onclick="toggleCategory('${cat.id}')"
+              class="w-full px-1.5 py-1 flex items-center justify-between text-[11px] font-semibold tracking-wider text-textMuted hover:text-textMain transition-colors group"
+            >
+              <div class="flex items-center gap-1">
+                <i data-lucide="${isCollapsed ? 'chevron-right' : 'chevron-down'}" class="w-3.5 h-3.5 transition-transform"></i>
+                <span>${escapeHtml(cat.name)}</span>
+              </div>
+              <span class="opacity-0 group-hover:opacity-100 transition-opacity text-textMuted hover:text-textMain" title="Channel Kategori">
+                <i data-lucide="plus" class="w-3.5 h-3.5"></i>
+              </span>
+            </button>
+
+            <div class="${isCollapsed ? 'hidden' : 'mt-1 space-y-0.5'}">
+              ${cat.channels.map(ch => {
+                if (ch.type === 'text') {
+                  const isActive = ch.id === state.activeChannelId;
+                  return `
+                    <button
+                      onclick="switchChannel('${ch.id}')"
+                      class="w-full px-2.5 py-1.5 rounded-md flex items-center justify-between group transition-colors ${
+                        isActive
+                          ? 'bg-surface text-textMain font-medium'
+                          : 'text-textMuted hover:bg-surface/60 hover:text-textMain'
+                      }"
+                    >
+                      <div class="flex items-center gap-2 min-w-0">
+                        <i data-lucide="hash" class="w-4 h-4 shrink-0 ${isActive ? 'text-accent' : 'text-textMuted group-hover:text-textMain'}"></i>
+                        <span class="text-[13.5px] truncate ${ch.unread && !isActive ? 'text-textMain font-semibold' : ''}">${escapeHtml(ch.name)}</span>
+                      </div>
+                      ${ch.unread && !isActive ? `<span class="w-2 h-2 rounded-full bg-accent shrink-0"></span>` : ''}
+                    </button>
+                  `;
+                } else {
+                  const isVoiceActive = state.activeVoiceChannelId === ch.id;
+                  return `
+                    <div>
+                      <button
+                        onclick="joinVoiceChannel('${ch.id}', '${escapeHtml(ch.name)}')"
+                        class="w-full px-2.5 py-1.5 rounded-md flex items-center justify-between group transition-colors ${
+                          isVoiceActive
+                            ? 'bg-online/15 text-online font-medium'
+                            : 'text-textMuted hover:bg-surface/60 hover:text-textMain'
+                        }"
+                      >
+                        <div class="flex items-center gap-2 min-w-0">
+                          <i data-lucide="volume-2" class="w-4 h-4 shrink-0 ${isVoiceActive ? 'text-online' : 'text-textMuted'}"></i>
+                          <span class="text-[13.5px] truncate">${escapeHtml(ch.name)}</span>
+                        </div>
+                        ${ch.participants && ch.participants.length > 0 ? `
+                          <span class="text-[10px] font-mono px-1.5 py-0.2 rounded bg-bg text-textMuted">${ch.participants.length}</span>
+                        ` : ''}
+                      </button>
+                      ${ch.participants && ch.participants.length > 0 ? `
+                        <div class="pl-7 pr-2 py-1 space-y-1">
+                          ${ch.participants.map(p => `
+                            <div class="flex items-center gap-2 text-xs text-textMuted">
+                              <span class="w-1.5 h-1.5 rounded-full bg-online"></span>
+                              <span class="truncate">${escapeHtml(p)}</span>
+                            </div>
+                          `).join('')}
+                        </div>
+                      ` : ''}
+                    </div>
+                  `;
+                }
+              }).join('')}
+            </div>
+          </div>
+        `;
+      }).join('');
+
+      lucide.createIcons();
+    }
+
+    function renderChatHeaderAndComposer() {
+      const channel = getCurrentChannelObj();
+      document.getElementById('activeChannelTitle').textContent = channel.name;
+      document.getElementById('activeChannelTopic').textContent = channel.topic || `Diskusi seputar #${channel.name}`;
+      document.getElementById('messageInput').placeholder = `Kirim pesan ke #${channel.name}`;
+    }
+
+    function renderMessages() {
+      const channelId = state.activeChannelId;
+      const rawMessages = state.messages[channelId] || [];
+      const query = state.searchQuery.trim().toLowerCase();
+
+      const filteredMessages = query
+        ? rawMessages.filter(m =>
+            m.text.toLowerCase().includes(query) ||
+            m.userName.toLowerCase().includes(query) ||
+            (m.attachment && m.attachment.name && m.attachment.name.toLowerCase().includes(query)) ||
+            (m.attachment && m.attachment.code && m.attachment.code.toLowerCase().includes(query))
+          )
+        : rawMessages;
+
+      const timeline = document.getElementById('messageTimeline');
+
+      // Welcome Banner at top of channel
+      const channel = getCurrentChannelObj();
+      let html = '';
+
+      if (!query) {
+        html += `
+          <div class="pt-4 pb-5 mb-4 border-b border-borderSubtle px-2">
+            <div class="w-12 h-12 rounded-2xl bg-surface border border-borderSubtle flex items-center justify-center mb-3">
+              <i data-lucide="hash" class="w-6 h-6 text-accent"></i>
+            </div>
+            <h2 class="text-xl font-bold text-textMain tracking-tight">Selamat datang di #${escapeHtml(channel.name)}</h2>
+            <p class="text-xs text-textMuted mt-1 max-w-2xl leading-relaxed">${escapeHtml(channel.topic || '')}</p>
+          </div>
+        `;
+      }
+
+      if (filteredMessages.length === 0) {
+        html += `
+          <div class="py-16 text-center">
+            <div class="w-10 h-10 rounded-full bg-surface mx-auto flex items-center justify-center text-textMuted mb-2">
+              <i data-lucide="search-x" class="w-5 h-5"></i>
+            </div>
+            <p class="text-sm font-medium text-textMain">Tidak ada pesan ditemukan</p>
+            <p class="text-xs text-textMuted mt-0.5">Coba gunakan kata kunci pencarian lain di #${escapeHtml(channel.name)}.</p>
+          </div>
+        `;
+      } else {
+        html += filteredMessages.map(msg => {
+          const reactionsHtml = (msg.reactions || []).map(r => `
+            <button
+              onclick="toggleReaction('${msg.id}', '${r.emoji}')"
+              class="inline-flex items-center gap-1.5 px-2 py-0.5 rounded-md text-xs font-medium border transition-colors ${
+                r.reacted
+                  ? 'bg-accent/20 border-accent text-textMain'
+                  : 'bg-surface/80 border-borderSubtle text-textMuted hover:bg-surface hover:text-textMain'
+              }"
+            >
+              <span>${r.emoji}</span>
+              <span class="font-mono text-[11px]">${r.count}</span>
+            </button>
+          `).join('');
+
+          const quickEmojiPickerHtml = EMOJI_PALETTE.map(em => `
+            <button
+              onclick="toggleReaction('${msg.id}', '${em}')"
+              class="w-7 h-7 rounded hover:bg-surfaceHover flex items-center justify-center text-sm transition-transform hover:scale-110"
+              title="Reaksi ${em}"
+            >${em}</button>
+          `).join('');
+
+          let attachmentHtml = '';
+          if (msg.attachment) {
+            if (msg.attachment.type === 'code') {
+              attachmentHtml = `
+                <div class="mt-2 rounded-lg overflow-hidden bg-bg border border-borderSubtle max-w-2xl">
+                  <div class="px-3 py-1.5 bg-sidebar border-b border-borderSubtle flex items-center justify-between text-[11px] font-mono text-textMuted">
+                    <span>${escapeHtml(msg.attachment.lang.toUpperCase())}</span>
+                    <button onclick="copyCodeSnippet(this)" class="hover:text-textMain flex items-center gap-1 transition-colors">
+                      <i data-lucide="copy" class="w-3 h-3"></i>
+                      <span>Copy</span>
+                    </button>
+                  </div>
+                  <pre class="p-3 overflow-x-auto text-[#D4D4D8]"><code>${escapeHtml(msg.attachment.code)}</code></pre>
+                </div>
+              `;
+            } else if (msg.attachment.type === 'file') {
+              attachmentHtml = `
+                <div class="mt-2 p-2.5 rounded-lg bg-surface/70 border border-borderSubtle max-w-sm flex items-center justify-between gap-3">
+                  <div class="flex items-center gap-2.5 min-w-0">
+                    <div class="w-9 h-9 rounded-md bg-accent/15 border border-accent/30 flex items-center justify-center text-accent shrink-0">
+                      <i data-lucide="file-text" class="w-4 h-4"></i>
+                    </div>
+                    <div class="min-w-0">
+                      <div class="text-xs font-medium text-textMain truncate">${escapeHtml(msg.attachment.name)}</div>
+                      <div class="text-[11px] text-textMuted font-mono">${escapeHtml(msg.attachment.size)}</div>
+                    </div>
+                  </div>
+                  <button onclick="showToast('Mengunduh ' + '${escapeHtml(msg.attachment.name)}', 'info')" class="p-1.5 rounded hover:bg-chat text-textMuted hover:text-textMain transition-colors" title="Unduh File">
+                    <i data-lucide="download" class="w-4 h-4"></i>
+                  </button>
+                </div>
+              `;
+            }
+          }
+
+          return `
+            <article class="group relative flex items-start gap-3.5 px-2.5 py-2 -mx-1 rounded-lg hover:bg-[#1D1E22] transition-colors">
+              <!-- Hover Quick Reaction Toolbar -->
+              <div class="opacity-0 group-hover:opacity-100 pointer-events-none group-hover:pointer-events-auto transition-opacity absolute -top-3 right-3 bg-sidebar border border-borderSubtle rounded-lg shadow-lg p-0.5 flex items-center gap-0.5 z-10">
+                ${quickEmojiPickerHtml}
+              </div>
+
+              <!-- User Avatar -->
+              <img src="${msg.avatar}" alt="${escapeHtml(msg.userName)}" class="w-9 h-9 rounded-full object-cover bg-surface shrink-0 mt-0.5" />
+
+              <!-- Message Body -->
+              <div class="flex-1 min-w-0">
+                <div class="flex items-baseline gap-2 flex-wrap">
+                  <span class="font-semibold text-[14px] text-textMain hover:underline cursor-pointer">${escapeHtml(msg.userName)}</span>
+                  ${msg.roleBadge ? `
+                    <span class="px-1.5 py-0.2 rounded text-[10px] font-mono font-semibold bg-surface text-accent border border-borderSubtle">${escapeHtml(msg.roleBadge)}</span>
+                  ` : ''}
+                  <time class="text-[11px] text-textMuted">${escapeHtml(msg.timestamp)}</time>
+                </div>
+
+                <div class="text-[14px] text-[#DBDEE1] leading-relaxed mt-0.5 break-words">${formatMessageContent(msg.text)}</div>
+
+                ${attachmentHtml}
+
+                <!-- Reactions Row -->
+                ${msg.reactions && msg.reactions.length > 0 ? `
+                  <div class="flex items-center flex-wrap gap-1.5 mt-2">
+                    ${reactionsHtml}
+                  </div>
+                ` : ''}
+              </div>
+            </article>
+          `;
+        }).join('');
+      }
+
+      timeline.innerHTML = html;
+      lucide.createIcons();
+    }
+
+    function renderMembers() {
+      const container = document.getElementById('memberListContainer');
+      const onlineMembers = state.members.filter(m => m.status !== 'offline');
+      const offlineMembers = state.members.filter(m => m.status === 'offline');
+
+      // Group online members by role
+      const rolesMap = {};
+      onlineMembers.forEach(m => {
+        if (!rolesMap[m.role]) rolesMap[m.role] = [];
+        rolesMap[m.role].push(m);
+      });
+
+      let html = '';
+
+      Object.keys(rolesMap).forEach(roleName => {
+        const list = rolesMap[roleName];
+        html += `
+          <div>
+            <div class="px-2 mb-1.5 text-[11px] font-semibold tracking-wider text-textMuted uppercase flex items-center justify-between">
+              <span>${escapeHtml(roleName)} — ${list.length}</span>
+            </div>
+            <div class="space-y-0.5">
+              ${list.map(member => `
+                <button
+                  onclick="mentionUser('${escapeHtml(member.name)}')"
+                  class="w-full px-2 py-1.5 rounded-md hover:bg-surface/70 flex items-center gap-2.5 group transition-colors text-left"
+                  title="Klik untuk mention @${escapeHtml(member.name)}"
+                >
+                  <div class="relative shrink-0">
+                    <img src="${member.avatar}" alt="${escapeHtml(member.name)}" class="w-8 h-8 rounded-full object-cover bg-surface" />
+                    <span class="absolute -bottom-0.5 -right-0.5 w-3 h-3 rounded-full ${getStatusColorClass(member.status)} border-2 border-sidebar"></span>
+                  </div>
+                  <div class="min-w-0 flex-1">
+                    <div class="flex items-center gap-1.5">
+                      <span class="text-[13px] font-medium truncate" style="color: ${member.roleColor || '#F2F3F5'}">${escapeHtml(member.name)}</span>
+                      ${member.badge ? `<span class="px-1 py-0.2 text-[9px] font-mono bg-surface text-textMuted rounded border border-borderSubtle">${escapeHtml(member.badge)}</span>` : ''}
+                    </div>
+                    <div class="text-[11px] text-textMuted truncate">${escapeHtml(member.activity)}</div>
+                  </div>
+                </button>
+              `).join('')}
+            </div>
+          </div>
+        `;
+      });
+
+      if (offlineMembers.length > 0) {
+        html += `
+          <div>
+            <div class="px-2 mb-1.5 text-[11px] font-semibold tracking-wider text-textMuted uppercase">
+              OFFLINE — ${offlineMembers.length}
+            </div>
+            <div class="space-y-0.5">
+              ${offlineMembers.map(member => `
+                <button
+                  onclick="mentionUser('${escapeHtml(member.name)}')"
+                  class="w-full px-2 py-1.5 rounded-md hover:bg-surface/50 flex items-center gap-2.5 opacity-60 hover:opacity-100 transition-all text-left"
+                >
+                  <div class="relative shrink-0">
+                    <img src="${member.avatar}" alt="${escapeHtml(member.name)}" class="w-8 h-8 rounded-full object-cover grayscale" />
+                    <span class="absolute -bottom-0.5 -right-0.5 w-3 h-3 rounded-full bg-offline border-2 border-sidebar"></span>
+                  </div>
+                  <div class="min-w-0 flex-1">
+                    <div class="text-[13px] font-medium text-textMuted truncate">${escapeHtml(member.name)}</div>
+                    <div class="text-[11px] text-textMuted truncate">${escapeHtml(member.activity)}</div>
+                  </div>
+                </button>
+              `).join('')}
+            </div>
+          </div>
+        `;
+      }
+
+      container.innerHTML = html;
+    }
+
+    function scrollToBottom() {
+      const timeline = document.getElementById('messageTimeline');
+      timeline.scrollTop = timeline.scrollHeight;
+    }
+
+    // ==========================================
+    // 4. USER INTERACTIONS & CONTROLLERS
+    // ==========================================
+    function switchServer(serverId) {
+      if (state.activeServerId === serverId) return;
+      state.activeServerId = serverId;
+      const server = getCurrentServer();
+      server.unread = 0;
+
+      // Pick first text channel
+      const firstChannel = server.categories[0].channels[0];
+      state.activeChannelId = firstChannel ? firstChannel.id : 'general';
+      state.searchQuery = '';
+      document.getElementById('searchInput').value = '';
+      document.getElementById('searchBanner').classList.add('hidden');
+
+      renderServers();
+      renderChannels();
+      renderChatHeaderAndComposer();
+      renderMessages();
+      scrollToBottom();
+      showToast(`Berpindah ke komunitas ${server.name}`, 'info');
+    }
+
+    function switchChannel(channelId) {
+      state.activeChannelId = channelId;
+
+      // Clear unread indicator on channel
+      const ch = getCurrentChannelObj();
+      if (ch) ch.unread = false;
+
+      // Clear search if active
+      if (state.searchQuery) {
+        clearSearch();
+      }
+
+      renderChannels();
+      renderChatHeaderAndComposer();
+      renderMessages();
+      scrollToBottom();
+
+      // Close mobile drawer after selecting channel
+      if (window.innerWidth < 1024) {
+        closeAllDrawers();
+      }
+    }
+
+    function toggleCategory(catId) {
+      state.collapsedCategories[catId] = !state.collapsedCategories[catId];
+      renderChannels();
+    }
+
+    function joinVoiceChannel(channelId, channelName) {
+      const server = getCurrentServer();
+      server.categories.forEach(cat => {
+        cat.channels.forEach(ch => {
+          if (ch.type === 'voice' && ch.participants) {
+            ch.participants = ch.participants.filter(p => p !== state.currentUser.name);
+            if (ch.id === channelId) {
+              ch.participants.push(state.currentUser.name);
+            }
+          }
+        });
+      });
+
+      state.activeVoiceChannelId = channelId;
+      document.getElementById('voiceStatusPanel').classList.remove('hidden');
+      document.getElementById('activeVoiceChannelName').textContent = channelName;
+      renderChannels();
+      showToast(`Terhubung ke voice channel ${channelName}`, 'success');
+    }
+
+    function leaveVoiceChannel() {
+      const server = getCurrentServer();
+      server.categories.forEach(cat => {
+        cat.channels.forEach(ch => {
+          if (ch.type === 'voice' && ch.participants) {
+            ch.participants = ch.participants.filter(p => p !== state.currentUser.name);
+          }
+        });
+      });
+      state.activeVoiceChannelId = null;
+      document.getElementById('voiceStatusPanel').classList.add('hidden');
+      renderChannels();
+      showToast('Koneksi voice diputuskan', 'info');
+    }
+
+    function handleComposerInput(textarea) {
+      textarea.style.height = 'auto';
+      textarea.style.height = Math.min(textarea.scrollHeight, 144) + 'px';
+    }
+
+    function handleComposerKeydown(event) {
+      if (event.key === 'Enter' && !event.shiftKey) {
+        event.preventDefault();
+        sendMessage();
+      }
+    }
+
+    function sendMessage() {
+      const input = document.getElementById('messageInput');
+      const text = input.value.trim();
+
+      if (!text && !state.pendingAttachment) return;
+
+      const now = new Date();
+      const timeStr = `Hari ini pukul ${String(now.getHours()).padStart(2, '0')}:${String(now.getMinutes()).padStart(2, '0')}`;
+
+      const newMsg = {
+        id: 'msg_' + Date.now(),
+        userId: state.currentUser.id,
+        userName: state.currentUser.name,
+        roleBadge: 'STAFF',
+        avatar: state.currentUser.avatar,
+        timestamp: timeStr,
+        text: text || 'Melampirkan potongan kode untuk diskusi:',
+        attachment: state.pendingAttachment ? { ...state.pendingAttachment } : null,
+        reactions: []
+      };
+
+      if (!state.messages[state.activeChannelId]) {
+        state.messages[state.activeChannelId] = [];
+      }
+      state.messages[state.activeChannelId].push(newMsg);
+
+      // Reset input & attachment
+      input.value = '';
+      input.style.height = 'auto';
+      removePendingAttachment();
+
+      renderMessages();
+      scrollToBottom();
+    }
+
+    function toggleReaction(messageId, emoji) {
+      const channelMsgs = state.messages[state.activeChannelId] || [];
+      const msg = channelMsgs.find(m => m.id === messageId);
+      if (!msg) return;
+
+      if (!msg.reactions) msg.reactions = [];
+      const existing = msg.reactions.find(r => r.emoji === emoji);
+
+      if (existing) {
+        if (existing.reacted) {
+          existing.count -= 1;
+          existing.reacted = false;
+          if (existing.count <= 0) {
+            msg.reactions = msg.reactions.filter(r => r.emoji !== emoji);
+          }
+        } else {
+          existing.count += 1;
+          existing.reacted = true;
+        }
+      } else {
+        msg.reactions.push({ emoji, count: 1, reacted: true });
+      }
+
+      renderMessages();
+    }
+
+    function handleSearchMessages(query) {
+      state.searchQuery = query;
+      const clearBtn = document.getElementById('clearSearchBtn');
+      const searchIcon = document.getElementById('searchIcon');
+      const banner = document.getElementById('searchBanner');
+      const label = document.getElementById('searchQueryLabel');
+
+      if (query.trim().length > 0) {
+        clearBtn.classList.remove('hidden');
+        searchIcon.classList.add('hidden');
+        banner.classList.remove('hidden');
+        label.textContent = `"${query}"`;
+      } else {
+        clearBtn.classList.add('hidden');
+        searchIcon.classList.remove('hidden');
+        banner.classList.add('hidden');
+      }
+
+      renderMessages();
+    }
+
+    function clearSearch() {
+      state.searchQuery = '';
+      document.getElementById('searchInput').value = '';
+      document.getElementById('clearSearchBtn').classList.add('hidden');
+      document.getElementById('searchIcon').classList.remove('hidden');
+      document.getElementById('searchBanner').classList.add('hidden');
+      renderMessages();
+    }
+
+    function attachSampleSnippet() {
+      const snippets = {
+        general: {
+          type: 'file',
+          name: 'architecture_rfc_2026.pdf',
+          size: '840 KB'
+        },
+        frontend: {
+          type: 'code',
+          lang: 'tsx',
+          name: 'useDebounceHook.ts',
+          code: `export function useDebounce<T>(value: T, delay = 250): T {\n  const [debounced, setDebounced] = useState(value);\n  useEffect(() => {\n    const timer = setTimeout(() => setDebounced(value), delay);\n    return () => clearTimeout(timer);\n  }, [value, delay]);\n  return debounced;\n}`
+        },
+        backend: {
+          type: 'code',
+          lang: 'sql',
+          name: 'pg_stat_activity_check.sql',
+          code: `SELECT pid, usename, state, wait_event_type, query\nFROM pg_stat_activity\nWHERE state != 'idle'\nORDER BY query_start ASC;`
+        },
+        golang: {
+          type: 'code',
+          lang: 'go',
+          name: 'ring_buffer_pool.go',
+          code: `var bufPool = sync.Pool{\n\tNew: func() any {\n\t\tb := make([]byte, 0, 4096)\n\t\treturn &b\n\t},\n}`
+        },
+        random: {
+          type: 'file',
+          name: 'desk_setup_2026.jpg',
+          size: '2.4 MB'
+        }
+      };
+
+      const sample = snippets[state.activeChannelId] || snippets.golang;
+      state.pendingAttachment = sample;
+      document.getElementById('attachedFileName').textContent = sample.name || `snippet.${sample.lang}`;
+      document.getElementById('attachmentPreviewContainer').classList.remove('hidden');
+      document.getElementById('messageInput').focus();
+    }
+
+    function removePendingAttachment() {
+      state.pendingAttachment = null;
+      document.getElementById('attachmentPreviewContainer').classList.add('hidden');
+    }
+
+    function insertQuickEmoji(emoji) {
+      const input = document.getElementById('messageInput');
+      input.value += (input.value.endsWith(' ') || input.value.length === 0 ? '' : ' ') + emoji + ' ';
+      input.focus();
+    }
+
+    function mentionUser(userName) {
+      const input = document.getElementById('messageInput');
+      input.value += `@${userName} `;
+      input.focus();
+      if (window.innerWidth < 1280) {
+        closeAllDrawers();
+      }
+    }
+
+    // Simulate Realistic Peer Reply
+    let typingTimeout = null;
+    function simulateIncomingMessage() {
+      const indicator = document.getElementById('typingIndicator');
+      const typingUser = document.getElementById('typingUserText');
+
+      const peers = [
+        {
+          name: 'Budi Santoso',
+          badge: 'STAFF',
+          avatar: 'https://images.unsplash.com/photo-1500648767791-00dcc994a43e?w=100&auto=format&fit=crop&q=80',
+          replies: {
+            general: 'Setuju, nanti hasil telemetry dari Prometheus aku pasang di dashboard utama supaya semua engineer bisa pantau real-time.',
+            frontend: 'Kalau kita kombinasikan dengan CSS `content-visibility: auto`, waktu initial render halaman log turun 40% lagi.',
+            backend: 'Aku baru cek replica lag di node read-only tetap di `0.4ms`. Aman banget buat kita buka traffic 100%.',
+            golang: 'Benchmark dengan `-benchmem` nunjukin `0 allocs/op` di hot path parser kita. Siap di-merge ke `main`!',
+            random: 'Jangan lupa rehat sejenak dan seduh V60 sore ini teman-teman!'
+          }
+        },
+        {
+          name: 'Nadia Putri',
+          badge: 'FE LEAD',
+          avatar: 'https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=100&auto=format&fit=crop&q=80',
+          replies: {
+            general: 'PR untuk pembaruan komponen navigasi sudah hijau semua di CI/CD pipeline.',
+            frontend: 'Sudah aku tes di viewport `375px`, `768px`, sampai `1440px` tanpa ada horizontal overflow.',
+            backend: 'Format response error JSON dari endpoint `/v2/channels` sudah konsisten dengan schema TypeScript kita.',
+            golang: 'Suka banget sama seberapa cepat binary Go kita jalan di container Alpine!',
+            random: 'Switch linear 45g tetap juara buat coding malam tanpa berisik.'
+          }
+        }
+      ];
+
+      const chosen = peers[Math.floor(Math.random() * peers.length)];
+      typingUser.textContent = chosen.name;
+      indicator.classList.remove('hidden');
+      indicator.classList.add('flex');
+
+      clearTimeout(typingTimeout);
+      typingTimeout = setTimeout(() => {
+        indicator.classList.add('hidden');
+        indicator.classList.remove('flex');
+
+        const now = new Date();
+        const timeStr = `Hari ini pukul ${String(now.getHours()).padStart(2, '0')}:${String(now.getMinutes()).padStart(2, '0')}`;
+        const replyText = chosen.replies[state.activeChannelId] || chosen.replies.general;
+
+        state.messages[state.activeChannelId].push({
+          id: 'msg_sim_' + Date.now(),
+          userId: 'u_sim',
+          userName: chosen.name,
+          roleBadge: chosen.badge,
+          avatar: chosen.avatar,
+          timestamp: timeStr,
+          text: replyText,
+          reactions: [{ emoji: '🔥', count: 1, reacted: false }]
+        });
+
+        renderMessages();
+        scrollToBottom();
+      }, 1400);
+    }
+
+    // ==========================================
+    // 5. SIDEBAR DRAWERS & RESPONSIVE TOGGLES
+    // ==========================================
+    function openLeftDrawer() {
+      const leftDrawer = document.getElementById('leftDrawer');
+      const overlay = document.getElementById('mobileOverlay');
+      leftDrawer.classList.remove('-translate-x-full');
+      overlay.classList.remove('hidden');
+      requestAnimationFrame(() => overlay.classList.remove('opacity-0'));
+    }
+
+    function toggleMemberSidebar() {
+      const memberSidebar = document.getElementById('memberSidebar');
+      const toggleBtn = document.getElementById('memberToggleBtn');
+      const overlay = document.getElementById('mobileOverlay');
+
+      if (window.innerWidth >= 1280) {
+        // Desktop toggle (xl breakpoint)
+        state.memberSidebarOpenDesktop = !state.memberSidebarOpenDesktop;
+        if (state.memberSidebarOpenDesktop) {
+          memberSidebar.classList.remove('xl:hidden');
+          toggleBtn.classList.add('bg-surface', 'text-textMain');
+          toggleBtn.classList.remove('text-textMuted');
+        } else {
+          memberSidebar.classList.add('xl:hidden');
+          toggleBtn.classList.remove('bg-surface', 'text-textMain');
+          toggleBtn.classList.add('text-textMuted');
+        }
+      } else {
+        // Mobile / Tablet slide-over drawer
+        const isClosed = memberSidebar.classList.contains('translate-x-full');
+        if (isClosed) {
+          memberSidebar.classList.remove('translate-x-full');
+          overlay.classList.remove('hidden');
+          requestAnimationFrame(() => overlay.classList.remove('opacity-0'));
+        } else {
+          closeAllDrawers();
+        }
+      }
+    }
+
+    function closeAllDrawers() {
+      const leftDrawer = document.getElementById('leftDrawer');
+      const memberSidebar = document.getElementById('memberSidebar');
+      const overlay = document.getElementById('mobileOverlay');
+
+      leftDrawer.classList.add('-translate-x-full');
+      memberSidebar.classList.add('translate-x-full');
+      overlay.classList.add('opacity-0');
+      setTimeout(() => overlay.classList.add('hidden'), 200);
+    }
+
+    // ==========================================
+    // 6. USER PROFILE POPOVER & AUDIO CONTROLS
+    // ==========================================
+    function toggleUserPopover(event) {
+      event.stopPropagation();
+      const popover = document.getElementById('userPopover');
+      popover.classList.toggle('hidden');
+    }
+
+    function setUserPresence(status, label) {
+      state.currentUser.status = status;
+      const dot1 = document.getElementById('currentUserStatusDot');
+      const dot2 = document.getElementById('popoverStatusDot');
+      const statusText = document.getElementById('currentUserStatusText');
+
+      const colorClass = getStatusColorClass(status);
+      dot1.className = `absolute -bottom-0.5 -right-0.5 w-3 h-3 rounded-full ${colorClass} border-2 border-[#131417]`;
+      dot2.className = `absolute bottom-0.5 right-0.5 w-3.5 h-3.5 rounded-full ${colorClass} border-2 border-bg`;
+      statusText.textContent = label;
+
+      // Also update in member list
+      const me = state.members.find(m => m.id === 'u_arya');
+      if (me) me.status = status;
+      renderMembers();
+
+      document.getElementById('userPopover').classList.add('hidden');
+      showToast(`Status diubah menjadi ${label}`, 'success');
+    }
+
+    function toggleMic() {
+      state.micMuted = !state.micMuted;
+      const btn = document.getElementById('micToggleBtn');
+      btn.innerHTML = `<i data-lucide="${state.micMuted ? 'mic-off' : 'mic'}" class="w-4 h-4 ${state.micMuted ? 'text-dnd' : ''}"></i>`;
+      lucide.createIcons();
+      showToast(state.micMuted ? 'Mikrofon dibisukan' : 'Mikrofon aktif', 'info');
+    }
+
+    function toggleDeafen() {
+      state.deafened = !state.deafened;
+      const btn = document.getElementById('deafenToggleBtn');
+      btn.innerHTML = `<i data-lucide="${state.deafened ? 'volume-x' : 'headphones'}" class="w-4 h-4 ${state.deafened ? 'text-dnd' : ''}"></i>`;
+      lucide.createIcons();
+      showToast(state.deafened ? 'Audio output dimatikan' : 'Audio output aktif', 'info');
+    }
+
+    function toggleGlobalNotifications(btn) {
+      state.notificationsMuted = !state.notificationsMuted;
+      btn.innerHTML = `<i data-lucide="${state.notificationsMuted ? 'bell-off' : 'bell'}" class="w-5 h-5 ${state.notificationsMuted ? 'text-dnd' : ''}"></i>`;
+      lucide.createIcons();
+      showToast(state.notificationsMuted ? 'Notifikasi komunitas diheningkan' : 'Notifikasi komunitas diaktifkan', 'info');
+    }
+
+    function copyProfileTag() {
+      navigator.clipboard?.writeText('aryawijaya#0001');
+      document.getElementById('userPopover').classList.add('hidden');
+      showToast('ID Pengguna aryawijaya#0001 disalin', 'success');
+    }
+
+    function copyCodeSnippet(btn) {
+      const codeEl = btn.closest('div').nextElementSibling.querySelector('code');
+      if (codeEl && navigator.clipboard) {
+        navigator.clipboard.writeText(codeEl.innerText);
+      }
+      showToast('Potongan kode disalin ke clipboard', 'success');
+    }
+
+    // ==========================================
+    // 7. MODALS & TOAST NOTIFICATIONS
+    // ==========================================
+    function openAddServerModal() {
+      document.getElementById('addServerModal').classList.remove('hidden');
+      document.getElementById('newServerNameInput').focus();
+    }
+
+    function closeAddServerModal() {
+      document.getElementById('addServerModal').classList.add('hidden');
+      document.getElementById('newServerNameInput').value = '';
+      document.getElementById('newServerShortInput').value = '';
+    }
+
+    function handleCreateServer(event) {
+      event.preventDefault();
+      const name = document.getElementById('newServerNameInput').value.trim();
+      let short = document.getElementById('newServerShortInput').value.trim().toUpperCase();
+      if (!name) return;
+
+      if (!short) {
+        short = name.split(' ').map(w => w[0]).join('').slice(0, 2).toUpperCase();
+      }
+
+      const newId = 'srv_' + Date.now();
+      state.servers.push({
+        id: newId,
+        name,
+        short,
+        unread: 0,
+        categories: [
+          {
+            id: 'cat_' + Date.now(),
+            name: 'TEXT CHANNELS',
+            channels: [
+              { id: 'general', name: 'general', type: 'text', unread: false, topic: `Channel diskusi utama komunitas ${name}.` },
+              { id: 'golang', name: 'golang', type: 'text', unread: false, topic: 'Diskusi engineering & arsitektur kode.' }
+            ]
+          }
+        ]
+      });
+
+      closeAddServerModal();
+      switchServer(newId);
+      showToast(`Komunitas "${name}" berhasil dibuat!`, 'success');
+    }
+
+    function showServerMenu() {
+      const server = getCurrentServer();
+      showToast(`${server.name} • 1,420 anggota aktif`, 'info');
+    }
+
+    function showPinnedToast() {
+      const ch = getCurrentChannelObj();
+      showToast(`3 pesan disematkan di #${ch.name} (Arsitektur & Standar Kode)`, 'info');
+    }
+
+    function showToast(message, type = 'info') {
+      const container = document.getElementById('toastContainer');
+      const toast = document.createElement('div');
+
+      const iconMap = {
+        success: { icon: 'check-circle-2', color: 'text-online' },
+        info: { icon: 'info', color: 'text-accent' }
+      };
+      const cfg = iconMap[type] || iconMap.info;
+
+      toast.className = 'pointer-events-auto flex items-center gap-2.5 px-3.5 py-2.5 rounded-lg bg-sidebar border border-borderSubtle shadow-xl text-xs font-medium text-textMain transform translate-y-2 opacity-0 transition-all duration-200';
+      toast.innerHTML = `
+        <i data-lucide="${cfg.icon}" class="w-4 h-4 ${cfg.color} shrink-0"></i>
+        <span class="flex-1 leading-snug">${escapeHtml(message)}</span>
+      `;
+
+      container.appendChild(toast);
+      lucide.createIcons();
+
+      requestAnimationFrame(() => {
+        toast.classList.remove('translate-y-2', 'opacity-0');
+      });
+
+      setTimeout(() => {
+        toast.classList.add('translate-y-2', 'opacity-0');
+        setTimeout(() => toast.remove(), 200);
+      }, 2800);
+    }
+
+    // Close popovers when clicking outside
+    document.addEventListener('click', (e) => {
+      const popover = document.getElementById('userPopover');
+      const trigger = document.getElementById('userProfileTrigger');
+      if (!popover.classList.contains('hidden') && !popover.contains(e.target) && !trigger.contains(e.target)) {
+        popover.classList.add('hidden');
+      }
+    });
+
+    // ==========================================
+    // 8. INITIALIZATION
+    // ==========================================
+    function initApp() {
+      renderServers();
+      renderChannels();
+      renderChatHeaderAndComposer();
+      renderMessages();
+      renderMembers();
+      scrollToBottom();
+      lucide.createIcons();
+    }
+
+    window.addEventListener('DOMContentLoaded', initApp);
+  </script>
+</body>
+</html>

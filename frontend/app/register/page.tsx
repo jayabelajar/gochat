@@ -5,7 +5,7 @@ import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { apiRequest } from '@/lib/api';
 import { useAuthStore } from '@/stores/authStore';
-import { MessageSquare } from 'lucide-react';
+import { Terminal, ArrowRight, Lock, Mail, User, AtSign, ArrowLeft } from 'lucide-react';
 
 export default function RegisterPage() {
   const router = useRouter();
@@ -38,104 +38,141 @@ export default function RegisterPage() {
       });
 
       setAuth(data.user, data.access_token);
-      router.push('/');
+      router.push('/app');
     } catch (err: any) {
-      setError(err.message || 'Registration failed');
+      setError(err.message || 'Pendaftaran akun gagal');
     } finally {
       setLoading(false);
     }
   };
 
   return (
-    <div className="min-h-screen bg-[#111214] flex items-center justify-center p-4">
-      <div className="w-full max-w-md bg-[#313338] rounded-lg p-8 shadow-2xl border border-[#232428]">
-        <div className="flex flex-col items-center text-center mb-6">
-          <div className="w-12 h-12 bg-[#5865F2] rounded-2xl flex items-center justify-center text-white mb-3 shadow-lg">
-            <MessageSquare className="w-6 h-6" />
+    <div className="min-h-screen bg-[#111214] bg-grid-pattern flex flex-col justify-between p-4 sm:p-6 font-sans select-none">
+      {/* Top Header */}
+      <div className="w-full max-w-6xl mx-auto flex items-center justify-between">
+        <Link href="/" className="flex items-center gap-2 group">
+          <div className="w-8 h-8 rounded-lg bg-[#2B2D31] border border-[#26282D] flex items-center justify-center">
+            <Terminal className="w-4 h-4 text-[#5865F2]" />
           </div>
-          <h1 className="text-2xl font-bold text-[#F2F3F5]">Create an account</h1>
-          <p className="text-sm text-[#949BA4] mt-1">Join the community on GoChat</p>
+          <span className="font-bold text-sm text-[#F2F3F5]">GoChat</span>
+        </Link>
+        <Link
+          href="/"
+          className="text-xs text-[#949BA4] hover:text-[#F2F3F5] flex items-center gap-1.5 transition"
+        >
+          <ArrowLeft className="w-3.5 h-3.5" />
+          <span>Kembali ke Beranda</span>
+        </Link>
+      </div>
+
+      {/* Main Card */}
+      <div className="w-full max-w-md mx-auto bg-[#17181B] border border-[#26282D] rounded-2xl p-6 sm:p-8 shadow-2xl my-6">
+        <div className="text-center mb-6">
+          <div className="w-12 h-12 bg-[#23A55A]/15 border border-[#23A55A]/30 rounded-2xl flex items-center justify-center text-[#23A55A] mx-auto mb-3 shadow-inner">
+            <User className="w-5 h-5" />
+          </div>
+          <h1 className="text-2xl font-bold tracking-tight text-[#F2F3F5]">Buat Akun Baru</h1>
+          <p className="text-xs text-[#949BA4] mt-1">Gabung bersama ribuan developer di GoChat</p>
         </div>
 
         {error && (
-          <div className="mb-4 p-3 bg-[#F23F43]/20 border border-[#F23F43] rounded text-xs text-[#F23F43]">
-            {error}
+          <div className="mb-4 p-3 bg-[#F23F43]/15 border border-[#F23F43]/30 rounded-lg text-xs text-[#F23F43] flex items-center gap-2">
+            <span className="w-1.5 h-1.5 rounded-full bg-[#F23F43]"></span>
+            <span>{error}</span>
           </div>
         )}
 
-        <form onSubmit={handleSubmit} className="space-y-4">
+        <form onSubmit={handleSubmit} className="space-y-3.5">
           <div>
-            <label className="block text-xs font-bold text-[#949BA4] uppercase mb-1">
-              Email
+            <label className="block text-[11px] font-bold text-[#949BA4] uppercase tracking-wider mb-1">
+              Alamat Email
             </label>
-            <input
-              type="email"
-              required
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
-              className="w-full bg-[#1E1F22] text-[#F2F3F5] text-sm rounded p-2.5 focus:outline-none focus:ring-1 focus:ring-[#5865F2]"
-            />
+            <div className="relative flex items-center">
+              <Mail className="absolute left-3 w-4 h-4 text-[#949BA4]" />
+              <input
+                type="email"
+                required
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                placeholder="nama@domain.com"
+                className="w-full bg-[#111214] border border-[#26282D] focus:border-[#5865F2] text-[#F2F3F5] text-xs rounded-lg pl-9 pr-3 py-2.5 outline-none transition"
+              />
+            </div>
           </div>
 
           <div>
-            <label className="block text-xs font-bold text-[#949BA4] uppercase mb-1">
-              Display Name
+            <label className="block text-[11px] font-bold text-[#949BA4] uppercase tracking-wider mb-1">
+              Nama Tampilan (Display Name)
             </label>
-            <input
-              type="text"
-              required
-              value={displayName}
-              onChange={(e) => setDisplayName(e.target.value)}
-              placeholder="What should people call you?"
-              className="w-full bg-[#1E1F22] text-[#F2F3F5] text-sm rounded p-2.5 focus:outline-none focus:ring-1 focus:ring-[#5865F2]"
-            />
+            <div className="relative flex items-center">
+              <User className="absolute left-3 w-4 h-4 text-[#949BA4]" />
+              <input
+                type="text"
+                required
+                value={displayName}
+                onChange={(e) => setDisplayName(e.target.value)}
+                placeholder="Arya Wijaya"
+                className="w-full bg-[#111214] border border-[#26282D] focus:border-[#5865F2] text-[#F2F3F5] text-xs rounded-lg pl-9 pr-3 py-2.5 outline-none transition"
+              />
+            </div>
           </div>
 
           <div>
-            <label className="block text-xs font-bold text-[#949BA4] uppercase mb-1">
-              Username
+            <label className="block text-[11px] font-bold text-[#949BA4] uppercase tracking-wider mb-1">
+              Username Handle
             </label>
-            <input
-              type="text"
-              required
-              value={username}
-              onChange={(e) => setUsername(e.target.value.toLowerCase().replace(/[^a-z0-9_]/g, ''))}
-              placeholder="unique_handle"
-              className="w-full bg-[#1E1F22] text-[#F2F3F5] text-sm rounded p-2.5 focus:outline-none focus:ring-1 focus:ring-[#5865F2]"
-            />
+            <div className="relative flex items-center">
+              <AtSign className="absolute left-3 w-4 h-4 text-[#949BA4]" />
+              <input
+                type="text"
+                required
+                value={username}
+                onChange={(e) => setUsername(e.target.value.toLowerCase().replace(/[^a-z0-9_]/g, ''))}
+                placeholder="aryawijaya"
+                className="w-full bg-[#111214] border border-[#26282D] focus:border-[#5865F2] text-[#F2F3F5] text-xs rounded-lg pl-9 pr-3 py-2.5 outline-none transition font-mono"
+              />
+            </div>
           </div>
 
           <div>
-            <label className="block text-xs font-bold text-[#949BA4] uppercase mb-1">
-              Password
+            <label className="block text-[11px] font-bold text-[#949BA4] uppercase tracking-wider mb-1">
+              Password (Min. 6 Karakter)
             </label>
-            <input
-              type="password"
-              required
-              minLength={6}
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-              className="w-full bg-[#1E1F22] text-[#F2F3F5] text-sm rounded p-2.5 focus:outline-none focus:ring-1 focus:ring-[#5865F2]"
-            />
+            <div className="relative flex items-center">
+              <Lock className="absolute left-3 w-4 h-4 text-[#949BA4]" />
+              <input
+                type="password"
+                required
+                minLength={6}
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                placeholder="••••••••"
+                className="w-full bg-[#111214] border border-[#26282D] focus:border-[#5865F2] text-[#F2F3F5] text-xs rounded-lg pl-9 pr-3 py-2.5 outline-none transition"
+              />
+            </div>
           </div>
 
           <button
             type="submit"
             disabled={loading}
-            className="w-full bg-[#5865F2] hover:bg-[#4752C4] text-white text-sm font-semibold py-2.5 rounded transition disabled:opacity-50 mt-2 cursor-pointer shadow-md"
+            className="w-full bg-[#5865F2] hover:bg-[#4752C4] text-white text-xs font-semibold py-2.5 rounded-lg transition disabled:opacity-50 flex items-center justify-center gap-1.5 shadow-md shadow-[#5865F2]/20 cursor-pointer mt-2"
           >
-            {loading ? 'Creating account...' : 'Continue'}
+            {loading ? 'Mendaftarkan Akun...' : 'Buat Akun Gratis'}
+            <ArrowRight className="w-3.5 h-3.5" />
           </button>
         </form>
 
-        <p className="text-xs text-[#949BA4] mt-4 text-center">
-          Already have an account?{' '}
-          <Link href="/login" className="text-[#5865F2] hover:underline">
-            Log In
+        <div className="mt-5 pt-4 border-t border-[#26282D] text-center text-xs text-[#949BA4]">
+          Sudah memiliki akun?{' '}
+          <Link href="/login" className="text-[#5865F2] hover:underline font-medium">
+            Masuk
           </Link>
-        </p>
+        </div>
+      </div>
+
+      <div className="text-center text-[11px] text-[#949BA4]">
+        &copy; 2026 GoChat Platform. Built with Go &amp; Next.js.
       </div>
     </div>
   );
 }
-
