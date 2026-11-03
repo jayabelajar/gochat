@@ -24,3 +24,4 @@ COPY --from=builder /app/migrations /app/migrations
 EXPOSE 8080
 
 CMD ["/app/server"]
+

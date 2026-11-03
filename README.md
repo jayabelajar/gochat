@@ -185,3 +185,4 @@ Prefix: `/api/v1`
 - `POST /conversations` — Create or retrieve 1-on-1 conversation
 - `GET /conversations/:id/messages` — Get direct conversation messages
 - `POST /conversations/:id/messages` — Send direct message
+
